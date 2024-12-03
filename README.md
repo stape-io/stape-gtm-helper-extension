@@ -1,2 +1,2 @@
-# stape-gtm-helper-extension
-Stape GTM Helper Extension for Google Chrome
+# Stape GTM Helper Extension for Google Chrome
+
