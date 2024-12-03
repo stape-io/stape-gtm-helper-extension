@@ -1,0 +1,162 @@
+/**
+ * Light syntax highlighting theme
+ */
+.gtm-debug-console-messages div:last-of-type {
+  overflow: auto;
+}
+
+div.gtm-debug-console-messages code[class*="language-"],
+pre[class*="language-"] {
+  max-width: none !important;
+  min-width: auto;
+}
+
+/**
+ * Removes prsim toolbar 
+ */
+.toolbar {
+  display: none;
+}
+
+code[class*="language-"],
+pre[class*="language-"] {
+  color: #383a42;
+  text-shadow: none;
+  font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
+  direction: ltr;
+  text-align: left;
+  white-space: pre;
+  word-spacing: normal;
+  word-break: normal;
+  word-wrap: normal;
+  line-height: 1.5;
+
+  -moz-tab-size: 4;
+  -o-tab-size: 4;
+  tab-size: 4;
+
+  -webkit-hyphens: none;
+  -moz-hyphens: none;
+  -ms-hyphens: none;
+  hyphens: none;
+}
+
+tbody > tr > td > pre {
+  max-width: 845px;
+}
+
+pre[class*="language-"] {
+  padding: 1em;
+  margin: 0.5em 0;
+  overflow: auto;
+  border-radius: 5px;
+  border: 1px solid #eeeeee;
+}
+
+:not(pre) > code[class*="language-"],
+pre[class*="language-"] {
+  background: #fcfcfc;
+}
+
+:not(pre) > code[class*="language-"] {
+  padding: 0.1em;
+  border-radius: 0.3em;
+}
+
+.token.comment,
+.token.prolog,
+.token.doctype,
+.token.cdata {
+  color: #a0a1a7;
+}
+
+.token.punctuation {
+  color: #383a42;
+}
+
+.namespace {
+  opacity: 0.7;
+}
+
+.token.property,
+.token.tag,
+.token.constant,
+.token.symbol,
+.token.deleted {
+  color: #e45649;
+}
+
+.token.boolean,
+.token.number {
+  color: #498ae4;
+}
+
+.token.selector,
+.token.attr-name,
+.token.string,
+.token.char,
+.token.builtin,
+.token.inserted {
+  color: #50a14f;
+}
+
+.token.operator,
+.token.entity,
+.token.url,
+.language-css .token.string,
+.style .token.string,
+.token.variable {
+  color: #383a42;
+}
+
+.token.atrule,
+.token.attr-value,
+.token.function {
+  color: #c18401;
+}
+
+.token.keyword {
+  color: #a626a4;
+}
+
+.token.regex,
+.token.important {
+  color: #0184bc;
+}
+
+.token.important,
+.token.bold {
+  font-weight: bold;
+}
+.token.italic {
+  font-style: italic;
+}
+
+.token.entity {
+  cursor: help;
+}
+
+/* SCROLLBAR */
+pre[class*="language-"] {
+  scrollbar-width: thin;
+  scrollbar-color: #d1d5db #f3f4f6;
+}
+
+pre[class*="language-"]::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+pre[class*="language-"]::-webkit-scrollbar-track {
+  background: #f3f4f6;
+  border-radius: 4px;
+}
+
+pre[class*="language-"]::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 4px;
+}
+
+pre[class*="language-"]::-webkit-scrollbar-thumb:hover {
+  background: #9ca3af;
+}
