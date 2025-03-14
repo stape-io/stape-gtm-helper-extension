@@ -1,11 +1,74 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <title>Stape GTM Helper</title>
+  <title>Stape GTM Helper Settings</title>
   <link rel="stylesheet" href="../css/popup.css">
 </head>
-<body style="text-align: center;">
-  <h1>Stape GTM Helper</h1>
-  <p>Dance like no one is watching</p>
+<body>
+  <h1>Stape GTM Helper | Settings</h1>
+
+  <div class="option-group">
+    <label class="toggle-label">
+      <div style="width: 80%; float:left;">
+        <b>JSON Formatter</b>
+        <div class="description">Show beautified JSON of incoming/outgoing requests in sGTM preview</div>
+      </div>
+      <div style="width: 20%; height:100%; float:right;">
+        <input type="checkbox" id="jsonBeautifier">
+      </div>
+    </label>
+  </div>
+
+  <div class="option-group">
+    <label class="toggle-label">
+      <div style="width: 80%; float:left;">
+        <b>Request URL Formatter</b>
+        <div class="description">Show beautified URL parameters of incoming/outgoing requests in sGTM preview</div>
+      </div>
+      <div style="width: 20%; height:100%; float:right;">
+        <input type="checkbox" id="urlFormatter">
+      </div>
+    </label>
+  </div>
+
+  <div class="option-group">
+    <label class="toggle-label">
+      <div style="width: 80%; float:left;">
+        <b>Tag Type Coloring</b>
+        <div class="description">Add colored indicators for different tag types. E.g. Orange for GA4 for web & server GTM preview</div>
+      </div>
+      <div style="width: 20%; height:100%; float:right;">
+        <input type="checkbox" id="gtmStyling">
+      </div>
+    </label>
+  </div>
+
+  <div class="option-group">
+    <label class="toggle-label">
+      <div style="width: 80%; float:left;">
+        <b>Tag Status Coloring</b>
+        <div class="description">Highlight failed tag statuses in red for web & server GTM preview</div>
+      </div>
+      <div style="width: 20%; height:100%; float:right;">
+        <input type="checkbox" id="tagStatusColoring">
+      </div>
+    </label>
+  </div>
+
+  <div class="option-group">
+    <label class="toggle-label">
+      <div style="width: 80%; float:left;">
+        <b>Consent Status</b>
+        <div class="description">Highlight consent status in sGTM preview based on gcs for GA4 requests and consent_state for Data tag requests</div>
+      </div>
+      <div style="width: 20%; height:100%; float:right;">
+        <input type="checkbox" id="checkConsent">
+      </div>
+    </label>
+  </div>
+
+  <div id="status" class="status"></div>
+
+  <script src="../js/popup.js"></script>
 </body>
 </html>

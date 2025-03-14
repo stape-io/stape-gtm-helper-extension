@@ -15,10 +15,6 @@ h1 {
   color: #202124;
 }
 
-.option-group {
-  margin-bottom: 16px;
-}
-
 label {
   display: block;
   margin-bottom: 8px;
@@ -77,4 +73,62 @@ button:disabled {
 .status.error {
   color: #dc3545;
   background-color: #fbe9e7;
+}
+.toggle-label {
+  display: flex;
+  gap: 4px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #202124;
+}
+
+.toggle-label input[type="checkbox"] {
+  margin-right: 8px;
+}
+
+.description {
+  font-size: 12px;
+  color: #5f6368;
+  margin-top: 2px;
+}
+
+.option-group {
+  padding: 12px 0;
+}
+
+.option-group:last-child {
+  border-bottom: none;
+}
+
+/* Style for checkboxes */
+input[type="checkbox"] {
+  -webkit-appearance: none;
+  appearance: none;
+  width: 40px;
+  height: 20px;
+  background: #ccc;
+  border-radius: 20px;
+  position: relative;
+  cursor: pointer;
+  transition: background 0.3s;
+}
+
+input[type="checkbox"]:checked {
+  background: #1a73e8;
+}
+
+input[type="checkbox"]::before {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  top: 2px;
+  left: 2px;
+  background: white;
+  transition: transform 0.3s;
+}
+
+input[type="checkbox"]:checked::before {
+  transform: translateX(20px);
 }

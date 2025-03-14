@@ -1,16 +1,17 @@
 {
   "manifest_version": 3,
   "name": "Stape GTM Helper",
-  "version": "1.0",
-  "description": "JSON Syntax highlighter for server Google Tag Manager",
+  "version": "2.0",
+  "description": "Enhance your Google Tag Manager debugging.",
   "action": {
-    "default_popup": "html/popup.html",      
+    "default_popup": "html/popup.html",
     "default_icon": {
       "16": "icons/icon16.png",
       "48": "icons/icon48.png",
       "128": "icons/icon128.png"
     }
   },
+  "permissions": ["storage"],
   "icons": {
     "16": "icons/icon16.png",
     "48": "icons/icon48.png",
@@ -18,8 +19,12 @@
   },
   "content_scripts": [
     {
-      "matches": ["*://*/gtm/debug?id*"],
-      "js": ["js/utils.js", "js/content.js", "js/prism.js"],
+      "matches": ["*://*/gtm/debug?id*", "*://tagassistant.google.com/*"],
+      "js": [
+        "js/prism.js",
+        "js/utils.js",
+        "js/content.js"
+      ],
       "css": ["css/default.css"]
     }
   ]
