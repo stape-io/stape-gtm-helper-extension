@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "Stape GTM Helper",
-  "version": "2.0",
+  "version": "3.0.0-beta0",
   "description": "Enhance your Google Tag Manager debugging.",
   "action": {
     "default_popup": "html/popup.html",
