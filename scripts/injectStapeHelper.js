@@ -93,7 +93,7 @@ const injectStapeHelper = function(config = {}) {
       let cssRules = `
         /* Base styles for GTM card highlighting */
         .stape-card-type-hl-enabled .gtm-debug-card[data-vendor] {
-          transition: border-left-color 0.3s ease;
+          /* -transition: border-left-color 0.3s ease; */
         }
         
         /* Base styles for vendor icons */
@@ -304,8 +304,7 @@ const injectStapeHelper = function(config = {}) {
     initializeFeatures() {
       this.features.GTMCardHighlighting = new GTMCardHighlighting(this);
       // GTM Card Highlighting
-      if (this.config.GTMCardHighlighting) {
-        
+      if (this.config.GTMCardHighlighting) {        
         this.features.GTMCardHighlighting.enable();
       }
       
