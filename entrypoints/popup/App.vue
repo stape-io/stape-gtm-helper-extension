@@ -47,8 +47,13 @@
       </div>
 
       <!-- Settings List -->
-      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div class="divide-y divide-gray-100 ">
+      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden" >
+        <div v-if="loading">
+ <div class="flex items-center justify-center my-10">
+  <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+</div>
+        </div>
+        <div class="divide-y divide-gray-100" v-else>
           <div v-for="(feature, key) in settings.features" :key="key" :class="[
             'flex items-center justify-between px-3 py-1.5 ',
 
@@ -126,6 +131,7 @@
               d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
           </svg>
         </button>
+        
       </div>
     </div>
   </div>
@@ -133,8 +139,9 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
-
-const settings = reactive({
+import { storage } from '#imports';
+const loading = ref(true)
+const settings = ref({
   features: {
     jsonFormatter: {
       description: 'Show beautified JSON of incoming/outgoing requests in sGTM preview',
@@ -177,8 +184,8 @@ const settings = reactive({
 // Create a computed that extracts just the enabled states
 const enabledStates = computed(() => {
   const states = {};
-  Object.keys(settings.features).forEach(key => {
-    states[key] = settings.features[key].enabled;
+  Object.keys(settings.value.features).forEach(key => {
+    states[key] = settings.value.features[key].enabled;
   });
   return states;
 });
@@ -187,7 +194,7 @@ watch(
   enabledStates,
   (newStates, oldStates) => {
     if (!oldStates) return;
-
+    storage.setItem('local:settings', settings.value)
     Object.keys(newStates).forEach(featureKey => {
       if (oldStates[featureKey] !== newStates[featureKey]) {
         console.log(`Feature changed: "${featureKey}" is now ${newStates[featureKey] ? 'ENABLED' : 'DISABLED'}`);
@@ -271,12 +278,17 @@ const activeSettingsCount = computed(() => {
 })
 const compactMode = ref(true)
 const toggleSetting = (key) => {
-  settings.features[key].enabled = !settings.features[key].enabled
+  settings.value.features[key].enabled = !settings.value.features[key].enabled
 }
 
 const openFeatureRequest = () => {
   window.open('https://feature.stape.io', '_blank')
 }
+onMounted(async()=>{
+  const data = await storage.getItem('local:settings');  
+  if(data) settings.value = data
+   loading.value = false
+})
 </script>
 
 <style scoped>

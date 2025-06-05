@@ -1,6 +1,6 @@
 import injectStapeHelper from '/scripts/injectStapeHelper'
 
-export default defineBackground(async () => {
+export default defineBackground(() => {
   // Detect GTM/GTM PREVIEW/SSGTM PREVIEW
   /*
   const environments = {
