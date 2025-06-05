@@ -5,7 +5,7 @@ export default defineConfig({
   manifest: {
     name: "Stape GTM Helper",
     description: "Enhance your Google Tag Manager debugging.",    
-    permissions: ["webNavigation", "scripting"],
+    permissions: ["webNavigation", "scripting", "storage"],
     host_permissions: ["https://*/"]
   },    
   modules: ['@wxt-dev/module-vue'],
