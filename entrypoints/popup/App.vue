@@ -1,5 +1,5 @@
 <template>
-  <div class=" bg-gray-50 p-4 w-120">
+  <div class=" bg-gray-50 p-4 w-104 ">
     <div class="max-w-2xl mx-auto">
       <!-- Simplified Header -->
       <div class="mb-4">
@@ -38,8 +38,7 @@
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
                   GTM Helper
                 </h1>
-
-                <span class="text-xs italic text-gray-400">v3.0.0-beta0</span>
+                <span class="text-xs italic text-gray-400">v3.0.0-beta0</span><div class="bg-blue-400 p-1 font-bold rounded text-white">GTM UI: DETECTED</div>
               </div>
             </div>
           </div>
@@ -47,10 +46,10 @@
       </div>
 
       <!-- Settings List -->
-      <div class="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden ">
-        <div class="divide-y divide-gray-100">
+      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
+        <div class="divide-y divide-gray-100 ">
           <div v-for="(feature, key) in settings.features" :key="key" :class="[
-            'flex items-center justify-between px-4 py-2 transition-colors duration-200',
+            'flex items-center justify-between px-3 py-1.5 ',
           
           ]">
             <div class="flex items-center gap-4 flex-1">
@@ -68,7 +67,10 @@
                   </p>
                 
                 </div>
-                <div else>  <span class="text-xl mx-2">🛈</span></div>
+                <div else class="flex mx-2">  
+<svg xmlns="http://www.w3.org/2000/svg" class="w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+
+                </div>
 
               </div>
             </div>
@@ -76,22 +78,22 @@
             <!-- Enhanced Toggle Switch -->
             <div class="ml-4">
               <button @click="toggleSetting(key)"
-                class="relative outline-none focus:ring-4 focus:ring-orange-100 rounded-full transition-all duration-200"
+                class="relative rounded-full transition-all duration-200"
                 type="button" :aria-label="`Toggle ${getFeatureTitle(key)}`">
                 <div :class="[
-                  'w-14 h-7 rounded-full transition-all duration-500 ease-in-out relative',
+                  'w-12 h-6 rounded-full transition-all duration-500 ease-in-out relative',
                   feature.enabled
-                    ? 'bg-gradient-to-r from-orange-400 to-orange-500 shadow-md'
+                    ? 'bg-[#FF6D34] shadow-md'
                     : 'bg-gray-300'
                 ]">
                   <!-- Inner track highlight for enabled state -->
                   <div v-if="feature.enabled"
-                    class="absolute inset-0.5 bg-gradient-to-r from-orange-300/50 to-orange-400/50 rounded-full"></div>
+                    class="absolute inset-0.5 rounded-full"></div>
                 </div>
 
                 <div :class="[
-                  'absolute top-0.5 w-6 h-6 rounded-full bg-white shadow-lg transform transition-all duration-500 ease-in-out flex items-center justify-center',
-                  feature.enabled ? 'translate-x-7 left-0.5' : 'translate-x-0 left-0.5'
+                  'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-lg transform transition-all duration-500 ease-in-out flex items-center justify-center',
+                  feature.enabled ? 'translate-x-6 left-0.5' : 'translate-x-0 left-0.5'
                 ]">
                   <!-- Smooth checkmark animation -->
                   <svg :class="[
