@@ -38,7 +38,8 @@
                 <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
                   GTM Helper
                 </h1>
-                <span class="text-xs italic text-gray-400">v3.0.0-beta0</span><div class="bg-blue-400 p-1 font-bold rounded text-white">GTM UI: DETECTED</div>
+                <span class="text-xs italic text-gray-400">v3.0.0-beta0</span>
+                <div class="bg-blue-400 p-1 font-bold rounded text-white">GTM UI: DETECTED</div>
               </div>
             </div>
           </div>
@@ -50,25 +51,28 @@
         <div class="divide-y divide-gray-100 ">
           <div v-for="(feature, key) in settings.features" :key="key" :class="[
             'flex items-center justify-between px-3 py-1.5 ',
-          
+
           ]">
             <div class="flex items-center gap-4 flex-1">
-              <div class="flex  min-w-0 flex-1"
-              :class="compactMode ? '' : 'flex-col'"
-              >
+              <div class="flex  min-w-0 flex-1" :class="compactMode ? '' : 'flex-col'">
                 <div class="flex items-center gap-3 mb-1">
                   <h3 class="text-base font-semibold text-gray-900">
                     {{ getFeatureTitle(key) }}
                   </h3>
                 </div>
                 <div v-if="!compactMode">
-                  <p class="text-xs text-gray-600 leading-relaxed" >
+                  <p class="text-xs text-gray-600 leading-relaxed">
                     {{ feature.description }}
                   </p>
-                
+
                 </div>
-                <div else class="flex mx-2">  
-<svg xmlns="http://www.w3.org/2000/svg" class="w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><path d="M12 17h.01"/></svg>
+                <div else class="flex mx-2">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5" viewBox="0 0 24 24" fill="none"
+                    stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
+                    <circle cx="12" cy="12" r="10" />
+                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
+                    <path d="M12 17h.01" />
+                  </svg>
 
                 </div>
 
@@ -77,8 +81,7 @@
 
             <!-- Enhanced Toggle Switch -->
             <div class="ml-4">
-              <button @click="toggleSetting(key)"
-                class="relative rounded-full transition-all duration-200"
+              <button @click="toggleSetting(key)" class="relative rounded-full transition-all duration-200"
                 type="button" :aria-label="`Toggle ${getFeatureTitle(key)}`">
                 <div :class="[
                   'w-12 h-6 rounded-full transition-all duration-500 ease-in-out relative',
@@ -87,8 +90,7 @@
                     : 'bg-gray-300'
                 ]">
                   <!-- Inner track highlight for enabled state -->
-                  <div v-if="feature.enabled"
-                    class="absolute inset-0.5 rounded-full"></div>
+                  <div v-if="feature.enabled" class="absolute inset-0.5 rounded-full"></div>
                 </div>
 
                 <div :class="[
@@ -130,47 +132,124 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, watch } from 'vue'
 
 const settings = reactive({
   features: {
     jsonFormatter: {
       description: 'Show beautified JSON of incoming/outgoing requests in sGTM preview',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMTASS"]
     },
     urlFormatter: {
       description: 'Show beautified URL parameters of incoming/outgoing requests in sGTM preview.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMTASS"]
     },
     tagTypesColouring: {
       description: 'Add colored indicators for different tag types. E.g. Orange for GA4 for web & server GTM preview.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
     },
     tagStatusColouring: {
       description: 'Highlight failed tag statuses in red for web & server GTM preview.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
     },
     consentStatusReporting: {
       description: 'Highlight consent status in sGTM preview based on gcs for GA4 requests and consent_state for Data tag requests.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMTASS"]
     },
     entitiesFilteringPreview: {
       description: 'Filter Tags and variables on preview mode.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMTA", "GTMTASS"]
     },
     entitiesFiltering: {
       description: 'Filter Tags and variables on UI.',
-      enabled: true,
+      enabled: false,
       activableOn: ["GTMUI"]
     }
   }
 })
+
+// Create a computed that extracts just the enabled states
+const enabledStates = computed(() => {
+  const states = {};
+  Object.keys(settings.features).forEach(key => {
+    states[key] = settings.features[key].enabled;
+  });
+  return states;
+});
+
+watch(
+  enabledStates,
+  (newStates, oldStates) => {
+    if (!oldStates) return;
+
+    Object.keys(newStates).forEach(featureKey => {
+      if (oldStates[featureKey] !== newStates[featureKey]) {
+        console.log(`Feature changed: "${featureKey}" is now ${newStates[featureKey] ? 'ENABLED' : 'DISABLED'}`);
+        handleFeatureChange(featureKey, newStates[featureKey]);
+      }
+    });
+  }
+);
+
+async function handleFeatureChange(featureKey, isEnabled) {
+
+  // Your logic here based on the specific feature and status
+  if (featureKey === 'tagTypesColouring') {
+    try {
+
+      if (isEnabled) {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs.length > 0) {
+            const tabId = tabs[0].id;
+            await browser.scripting.executeScript({
+              target: { tabId },
+              func: () => {
+                console.log("ENABLE FEATURE")
+                if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
+                  window.__stape.getFeature('GTMCardHighlighting').enable();
+                } else {
+                  console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
+                }
+              },
+              world: 'MAIN'
+            });
+          }
+        });
+
+
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs.length > 0) {
+            const tabId = tabs[0].id;
+        await browser.scripting.executeScript({
+          target: { tabId },
+          func: () => {
+            console.log("DISABLE FEATURE")
+            if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
+              window.__stape.getFeature('GTMCardHighlighting').disable();
+            } else {
+              console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
+            }
+          },
+          world: 'MAIN'
+        });
+          }
+        });
+        
+        
+
+      }
+    } catch (error) {
+      console.error('Failed to execute script:', error);
+    }
+  }
+}
 
 const activeTooltip = ref(null)
 
