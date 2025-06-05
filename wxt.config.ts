@@ -1,4 +1,5 @@
 import { defineConfig } from 'wxt';
+import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
   manifest: {
@@ -8,6 +9,11 @@ export default defineConfig({
     host_permissions: ["https://*/"]
   },    
   modules: ['@wxt-dev/module-vue'],
+  vite: () => ({
+      plugins: [
+      tailwindcss()      
+    ],
+  }),
   runner: {
     startUrls: ['https://tagmanager.google.com/'],
   },  

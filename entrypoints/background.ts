@@ -14,11 +14,7 @@ export default defineBackground(async () => {
   */
 
   const settings = {
-    floatingButton: {
-      description: 'Add a floating action button if any of the GTM enviroments are detected',
-      enabled: true,
-      activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
-    },
+
     features: {
       jsonFormatter: {
         description: 'Show beautified JSON of incoming/outgoing requests in server GTM preview',
@@ -112,12 +108,7 @@ export default defineBackground(async () => {
     }
 
     if (currentEnvironment !== null) {
-      if (settings.floatingButton.activableOn.includes(currentEnvironment) && settings.floatingButton.enabled) {
-        browser.scripting.executeScript({
-          target: { tabId },
-          func: floatingButton,
-          world: 'MAIN'
-        })
+      if (settings.floatingButton.activableOn.includes(currentEnvironment)) {
         browser.scripting.executeScript({
           target: { tabId },
           func: stapeFunctions,
@@ -125,6 +116,5 @@ export default defineBackground(async () => {
         })        
       }
     }
-
   });
 });

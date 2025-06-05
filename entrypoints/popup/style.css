@@ -1,21 +1,3 @@
-
-body {
-  margin: 0;
-  display: flex;
-  min-width: 320px;
-
-}
+@import "tailwindcss";
 
 
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
-}
