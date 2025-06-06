@@ -47,11 +47,11 @@
       </div>
 
       <!-- Settings List -->
-      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden" >
+      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
         <div v-if="loading">
- <div class="flex items-center justify-center my-10">
-  <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-</div>
+          <div class="flex items-center justify-center my-10">
+            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+          </div>
         </div>
         <div class="divide-y divide-gray-100" v-else>
           <div v-for="(feature, key) in settings.features" :key="key" :class="[
@@ -131,7 +131,7 @@
               d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
           </svg>
         </button>
-        
+
       </div>
     </div>
   </div>
@@ -139,6 +139,7 @@
 
 <script setup>
 import { ref, reactive, computed, watch } from 'vue'
+import injectGTMHelper from '/scripts/filters'
 import { storage } from '#imports';
 const loading = ref(true)
 const settings = ref({
@@ -206,6 +207,22 @@ watch(
 
 async function handleFeatureChange(featureKey, isEnabled) {
 
+  if (featureKey === 'entitiesFiltering') {
+    if (isEnabled) {
+      console.log("INJECT")
+      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+        if (tabs.length > 0) {
+          const tabId = tabs[0].id;
+          await browser.scripting.executeScript({
+            target: { tabId },
+            func: injectGTMHelper,
+            world: 'MAIN'
+          });
+        }
+      });
+    }
+  }
+
   // Your logic here based on the specific feature and status
   if (featureKey === 'tagTypesColouring') {
     try {
@@ -234,22 +251,22 @@ async function handleFeatureChange(featureKey, isEnabled) {
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
           if (tabs.length > 0) {
             const tabId = tabs[0].id;
-        await browser.scripting.executeScript({
-          target: { tabId },
-          func: () => {
-            console.log("DISABLE FEATURE")
-            if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
-              window.__stape.getFeature('GTMCardHighlighting').disable();
-            } else {
-              console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
-            }
-          },
-          world: 'MAIN'
-        });
+            await browser.scripting.executeScript({
+              target: { tabId },
+              func: () => {
+                console.log("DISABLE FEATURE")
+                if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
+                  window.__stape.getFeature('GTMCardHighlighting').disable();
+                } else {
+                  console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
+                }
+              },
+              world: 'MAIN'
+            });
           }
         });
-        
-        
+
+
 
       }
     } catch (error) {
@@ -284,10 +301,10 @@ const toggleSetting = (key) => {
 const openFeatureRequest = () => {
   window.open('https://feature.stape.io', '_blank')
 }
-onMounted(async()=>{
-  const data = await storage.getItem('local:settings');  
-  if(data) settings.value = data
-   loading.value = false
+onMounted(async () => {
+  const data = await storage.getItem('local:settings');
+  if (data) settings.value = data
+  loading.value = false
 })
 </script>
 
