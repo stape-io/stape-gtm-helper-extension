@@ -5,6 +5,165 @@ const injectStapeHelper = function(config = {}) {
     console.log('StapeHelper already injected');
     return;
   }
+
+  // ConsentStatusHelper class
+  class ConsentStatusHelper {
+    constructor(stapeHelper) {
+      this.stapeHelper = stapeHelper;
+      this.lastTitle = null;
+      this.mutationCallback = null;
+      this.initialized = false;
+      this.enabled = false; // Internal enabled state
+      
+      // Define consent types and their status mapping
+      this.consentTypes = [
+        "analytics_storage",
+        "ad_storage", 
+        "ad_user_data",
+        "ad_personalization",
+      ];
+      
+      this.consentMappings = {
+        "g111": ["granted", "granted", "granted", "granted"],
+        "g100": ["denied", "denied", "denied", "denied"],
+        "g101": ["granted", "denied", "denied", "denied"],
+        "g110": ["denied", "granted", "granted", "granted"],
+      };
+      
+      // Initialize the feature
+      this.init();
+    }
+
+    // Initialize the feature
+    init() {
+      if (this.initialized) return;
+      
+      // Inject styles
+      this.injectStyles();
+      
+      // Setup mutation observer
+      this.mutationCallback = (mutations) => this.onMutation(mutations);
+      this.stapeHelper.mutationObserver.addCallback(this.mutationCallback);
+      
+      this.initialized = true;
+      console.log('ConsentStatusHelper initialized');
+    }
+
+    // Generate and inject CSS styles
+    injectStyles() {
+      const cssRules = `
+        .consent-status.consent-granted::before {
+          background-color: #28a745;
+        }
+        
+        .consent-status.consent-denied::before {
+          background-color: #dc3545;
+        }
+      `;
+      
+      this.stapeHelper.styleManager.inject('consent-status-helper', cssRules);
+    }
+
+    // Mutation observer callback
+    onMutation(mutations) {
+      // Only run if the feature is enabled
+      if (this.enabled) {
+        this.checkAndUpdate();
+      }
+    }
+
+    // Main logic to check and update consent status
+    checkAndUpdate() {
+      const targetElement = document.querySelector(".message-list__group .message-list__row--child-selected .wd-debug-message-title");
+      
+      if (targetElement) {
+        const currentTitle = targetElement.title;
+        
+        if (currentTitle !== this.lastTitle) {
+          console.log(currentTitle);
+          
+          if (currentTitle && currentTitle.startsWith('collect') && currentTitle.includes('v=2')) {
+            const gcsMatch = currentTitle.match(/gcs=([^&]+)/i);
+            
+            if (gcsMatch) {
+              const gcsValue = gcsMatch[1].toLowerCase();
+              
+              if (this.consentMappings[gcsValue]) {
+                this.injectConsentStatus(gcsValue);
+              }
+            }
+          } else {
+            this.removeConsentStatus();
+          }
+          this.lastTitle = currentTitle;
+        }
+      } else {
+        if (this.lastTitle !== null) {
+          this.lastTitle = null;
+        }
+      }
+    }
+
+    // Inject consent status HTML
+    injectConsentStatus(gcsValue) {
+      const insertTarget = document.querySelector(".blg-card-tabs");
+      if (!insertTarget) return;
+
+      this.removeConsentStatus();
+
+      const statuses = this.consentMappings[gcsValue];
+      
+      const consentHTML = this.consentTypes.map((type, index) => 
+        `<span class="consent-status consent-${statuses[index]}">${type}</span>`
+      ).join('');
+      
+      insertTarget.insertAdjacentHTML('afterend',
+        `<div class="gtm-debug-pane-header gtm-consent-header">Consent Status</div><div class="consent-status-container">${consentHTML}</div>`
+      );
+    }
+
+    // Remove consent status blocks
+    removeConsentStatus() {
+      const existing = document.querySelector('.consent-status-container');
+      if (existing) {
+        existing.previousElementSibling?.remove();
+        existing.remove();
+      }
+    }
+
+    // Enable highlighting
+    enable() {
+      this.enabled = true;
+      // Reset lastTitle to force a check
+      this.lastTitle = null;
+      // Check immediately for any active element when enabled
+      this.checkAndUpdate();
+      console.log('ConsentStatusHelper enabled');
+    }
+
+    // Disable highlighting
+    disable() {
+      this.enabled = false;
+      this.removeConsentStatus();
+      console.log('ConsentStatusHelper disabled');
+    }
+
+    // Destroy the feature
+    destroy() {
+      if (!this.initialized) return;
+      
+      this.stapeHelper.styleManager.remove('consent-status-helper');
+      
+      this.disable();
+      
+      if (this.mutationCallback) {
+        this.stapeHelper.mutationObserver.removeCallback(this.mutationCallback);
+      }
+      
+      this.initialized = false;
+      console.log('ConsentStatusHelper destroyed');
+    }
+  }
   
   // GTMCardHighlighting class
   class GTMCardHighlighting {
@@ -287,7 +446,9 @@ const injectStapeHelper = function(config = {}) {
       
       observer.observe(document.body, {
         childList: true,
-        subtree: true
+        subtree: true,
+        attributes: true,
+        attributeFilter: ['class', 'title']
       });
       
       return {
@@ -303,9 +464,16 @@ const injectStapeHelper = function(config = {}) {
     // Initialize features based on configuration
     initializeFeatures() {
       this.features.GTMCardHighlighting = new GTMCardHighlighting(this);
+      this.features.ConsentStatusHelper = new ConsentStatusHelper(this);
+      
       // GTM Card Highlighting
       if (this.config.GTMCardHighlighting) {        
         this.features.GTMCardHighlighting.enable();
+      }
+      
+      // Consent Status Helper
+      if (this.config.ConsentStatusHelper) {        
+        this.features.ConsentStatusHelper.enable();
       }
       
       // Future features can be added here following the same pattern

@@ -223,6 +223,56 @@ async function handleFeatureChange(featureKey, isEnabled) {
     }
   }
 
+  if (featureKey === 'consentStatusReporting') {
+    try {
+      console.log("ASDASD")
+      if (isEnabled) {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs.length > 0) {
+            const tabId = tabs[0].id;
+            await browser.scripting.executeScript({
+              target: { tabId },
+              func: () => {
+                console.log("ENABLE FEATURE: ConsentStatusHelper")
+                if (window.__stape && window.__stape.getFeature('ConsentStatusHelper')) {
+                  window.__stape.getFeature('ConsentStatusHelper').enable();
+                } else {
+                  console.warn('StapeHelper not found or ConsentStatusHelper feature not available');
+                }
+              },
+              world: 'MAIN'
+            });
+          }
+        });
+
+
+      } else {
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+          if (tabs.length > 0) {
+            const tabId = tabs[0].id;
+            await browser.scripting.executeScript({
+              target: { tabId },
+              func: () => {
+                console.log("DISABLE FEATURE: ConsentStatusHelper")
+                if (window.__stape && window.__stape.getFeature('ConsentStatusHelper')) {
+                  window.__stape.getFeature('ConsentStatusHelper').disable();
+                } else {
+                  console.warn('StapeHelper not found or ConsentStatusHelper feature not available');
+                }
+              },
+              world: 'MAIN'
+            });
+          }
+        });
+
+
+
+      }
+    } catch (error) {
+      console.error('Failed to execute script:', error);
+    }
+
+  }
   // Your logic here based on the specific feature and status
   if (featureKey === 'tagTypesColouring') {
     try {
