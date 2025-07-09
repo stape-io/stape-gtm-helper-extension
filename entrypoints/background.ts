@@ -42,6 +42,7 @@ export default defineBackground(() => {
           // TODO, create a composable
           await browser.scripting.executeScript({
             target: { tabId: details.tabId },
+            injectImmediately: true,
             world: 'MAIN',
             func: ()=>{
               alert('Hi')
