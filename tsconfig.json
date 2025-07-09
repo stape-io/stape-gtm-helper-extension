@@ -1,3 +1,22 @@
 {
-  "extends": "./.wxt/tsconfig.json"
+  "extends": "./.wxt/tsconfig.json",
+  "compilerOptions": {
+    "strict": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "strictFunctionTypes": true,
+    "noImplicitReturns": true,
+    "noImplicitThis": true,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "incremental": true,
+    "baseUrl": ".",
+    "paths": {
+      "/shared/*": ["./shared/*"],
+      "/scripts/*": ["./scripts/*"],
+      "/entrypoints/*": ["./entrypoints/*"]
+    },
+    "typeRoots": ["./types", "./node_modules/@types"]
+  },
+  "include": ["**/*", "types/**/*"]
 }

@@ -1,12 +1,12 @@
 <template>
-  <div class=" bg-gray-50 p-4 w-104 ">
+  <div class="bg-gray-50 p-4 w-96">
     <div class="max-w-2xl mx-auto">
-      <!-- Simplified Header -->
+      <!-- Header -->
       <div class="mb-4">
         <div class="p-0">
           <div class="flex items-center gap-6">
             <!-- Logo Container -->
-            <div class="w-36 h-20  rounded-xl flex items-center justify-center border border-gray-200 bg-white">
+            <div class="w-36 h-20 rounded-xl flex items-center justify-center border border-gray-200 bg-white">
               <svg class="w-32 h-auto" viewBox="0 0 2242 1024" fill="none" xmlns="http://www.w3.org/2000/svg">
                 <path
                   d="M800.97 358.735L748.852 389.637C739.108 372.715 729.824 361.678 721 356.528C711.808 350.642 699.951 347.699 685.427 347.699C667.595 347.699 652.796 352.757 641.03 362.874C629.265 372.806 623.382 385.314 623.382 400.397C623.382 421.182 638.824 437.92 669.709 450.612L712.176 467.994C746.737 481.973 772.015 499.079 788.009 519.312C804.003 539.361 812 564.009 812 593.255C812 632.433 798.947 664.806 772.842 690.373C746.554 716.124 713.922 729 674.948 729C637.997 729 607.48 718.056 583.397 696.167C559.682 674.279 544.883 643.469 539 603.739L604.079 589.392C607.02 614.407 612.168 631.697 619.521 641.262C632.758 659.656 652.061 668.853 677.43 668.853C697.469 668.853 714.106 662.139 727.342 648.712C740.579 635.284 747.197 618.27 747.197 597.669C747.197 589.392 746.002 581.851 743.612 575.045C741.406 568.055 737.821 561.71 732.858 556.007C728.078 550.122 721.827 544.695 714.106 539.729C706.385 534.579 697.193 529.705 686.53 525.106L645.442 508C587.166 483.352 558.027 447.301 558.027 399.845C558.027 367.84 570.253 341.077 594.703 319.557C619.154 297.852 649.579 287 685.979 287C735.064 287 773.394 310.912 800.97 358.735Z"
@@ -35,352 +35,94 @@
             <!-- Title Section -->
             <div class="flex-1 min-w-0">
               <div class="flex-1">
-                <h1 class="text-3xl font-bold text-gray-900 tracking-tight">
+                <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
                   GTM Helper
                 </h1>
-                <span class="text-xs italic text-gray-400">v3.0.0-beta0</span>
-                <div class="bg-blue-400 p-1 font-bold rounded text-white">GTM UI: DETECTED</div>
+                <div class="text-xs text-gray-500 mt-1">
+                  Chrome Extension for GTM Debugging
+                </div>
               </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Settings List -->
-      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
-        <div v-if="loading">
-          <div class="flex items-center justify-center my-10">
-            <div class="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+      <!-- Simple Content -->
+      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 p-6">
+        <div class="text-center">
+          <div class="mb-4">
+            <svg v-if="!gtmStatus" class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            <svg v-else class="w-16 h-16 mx-auto text-green-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
           </div>
-        </div>
-        <div class="divide-y divide-gray-100" v-else>
-          <div v-for="(feature, key) in settings.features" :key="key" :class="[
-            'flex items-center justify-between px-3 py-1.5 ',
-
-          ]">
-            <div class="flex items-center gap-4 flex-1">
-              <div class="flex  min-w-0 flex-1" :class="compactMode ? '' : 'flex-col'">
-                <div class="flex items-center gap-3 mb-1">
-                  <h3 class="text-base font-semibold text-gray-900">
-                    {{ getFeatureTitle(key) }}
-                  </h3>
-                </div>
-                <div v-if="!compactMode">
-                  <p class="text-xs text-gray-600 leading-relaxed">
-                    {{ feature.description }}
-                  </p>
-
-                </div>
-                <div else class="flex mx-2">
-                  <svg xmlns="http://www.w3.org/2000/svg" class="w-5" viewBox="0 0 24 24" fill="none"
-                    stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round">
-                    <circle cx="12" cy="12" r="10" />
-                    <path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3" />
-                    <path d="M12 17h.01" />
-                  </svg>
-
-                </div>
-
-              </div>
-            </div>
-
-            <!-- Enhanced Toggle Switch -->
-            <div class="ml-4">
-              <button @click="toggleSetting(key)" class="relative rounded-full transition-all duration-200"
-                type="button" :aria-label="`Toggle ${getFeatureTitle(key)}`">
-                <div :class="[
-                  'w-12 h-6 rounded-full transition-all duration-500 ease-in-out relative',
-                  feature.enabled
-                    ? 'bg-[#FF6D34] shadow-md'
-                    : 'bg-gray-300'
-                ]">
-                  <!-- Inner track highlight for enabled state -->
-                  <div v-if="feature.enabled" class="absolute inset-0.5 rounded-full"></div>
-                </div>
-
-                <div :class="[
-                  'absolute top-0.5 w-5 h-5 rounded-full bg-white shadow-lg transform transition-all duration-500 ease-in-out flex items-center justify-center',
-                  feature.enabled ? 'translate-x-6 left-0.5' : 'translate-x-0 left-0.5'
-                ]">
-                  <!-- Smooth checkmark animation -->
-                  <svg :class="[
-                    'w-3.5 h-3.5 text-orange-500 transition-all duration-300',
-                    feature.enabled ? 'opacity-100 scale-100' : 'opacity-0 scale-75'
-                  ]" fill="currentColor" viewBox="0 0 20 20">
-                    <path fill-rule="evenodd"
-                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-                      clip-rule="evenodd"></path>
-                  </svg>
-                </div>
-              </button>
-            </div>
+          
+          <h2 v-if="!gtmStatus" class="text-lg font-semibold text-gray-900 mb-2">GTM Helper Ready</h2>
+          <h2 v-else class="text-lg font-semibold text-green-900 mb-2">GTM Environment Detected</h2>
+          
+          <p v-if="!gtmStatus" class="text-sm text-gray-600 mb-4">
+             Break off. No GTM Environment detected. 
+          </p>
+          <div v-else class="text-sm text-gray-600 mb-4">
+            <div class="font-medium text-green-700 mb-1">{{ gtmStatus.environment }}</div>
+            <div class="text-xs text-gray-500 break-all">{{ gtmStatus.url }}</div>
+          </div>
+          
+          <div class="text-xs text-gray-500">
+            Version 3.0.0-beta1
           </div>
         </div>
       </div>
 
-      <!-- Feature Request Footer -->
+      <!-- Footer -->
       <div class="mt-4">
         <button @click="openFeatureRequest"
-          class="w-full flex items-center justify-center gap-3 px-6 py-4 bg-white border border-gray-200 rounded-2xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+          class="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
           </svg>
-          Request a new feature
+          Request a Feature
           <svg class="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
               d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"></path>
           </svg>
         </button>
-
       </div>
     </div>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed, watch } from 'vue'
-import injectGTMHelper from '/scripts/filters'
-import { storage } from '#imports';
-const loading = ref(true)
-const settings = ref({
-  features: {
-    jsonFormatter: {
-      description: 'Show beautified JSON of incoming/outgoing requests in sGTM preview',
-      enabled: false,
-      activableOn: ["GTMTASS"]
-    },
-    urlFormatter: {
-      description: 'Show beautified URL parameters of incoming/outgoing requests in sGTM preview.',
-      enabled: false,
-      activableOn: ["GTMTASS"]
-    },
-    tagTypesColouring: {
-      description: 'Add colored indicators for different tag types. E.g. Orange for GA4 for web & server GTM preview.',
-      enabled: false,
-      activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
-    },
-    tagStatusColouring: {
-      description: 'Highlight failed tag statuses in red for web & server GTM preview.',
-      enabled: false,
-      activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
-    },
-    consentStatusReporting: {
-      description: 'Highlight consent status in sGTM preview based on gcs for GA4 requests and consent_state for Data tag requests.',
-      enabled: false,
-      activableOn: ["GTMTASS"]
-    },
-    entitiesFilteringPreview: {
-      description: 'Filter Tags and variables on preview mode.',
-      enabled: false,
-      activableOn: ["GTMTA", "GTMTASS"]
-    },
-    entitiesFiltering: {
-      description: 'Filter Tags and variables on UI.',
-      enabled: false,
-      activableOn: ["GTMUI"]
-    }
+
+import { ref, onMounted } from 'vue'
+import { sendMessage } from "webext-bridge/popup";
+
+// Reactive state
+const gtmStatus = ref(null)
+
+const getCurrentTabStatus = async () => {
+  try {
+    const status = await sendMessage("GET_CURRENT_TAB_STATUS", {}, "background");
+    console.log("BG RESPONSE", status);
+    gtmStatus.value = status; // assign status to reactive variable
+  } catch (error) {
+    console.error("Failed to get tab status from background:", error);
+    gtmStatus.value = null; // fallback
   }
+};
+
+onMounted(() => {
+  getCurrentTabStatus()
 })
-
-// Create a computed that extracts just the enabled states
-const enabledStates = computed(() => {
-  const states = {};
-  Object.keys(settings.value.features).forEach(key => {
-    states[key] = settings.value.features[key].enabled;
-  });
-  return states;
-});
-
-watch(
-  enabledStates,
-  (newStates, oldStates) => {
-    if (!oldStates) return;
-    storage.setItem('local:settings', settings.value)
-    Object.keys(newStates).forEach(featureKey => {
-      if (oldStates[featureKey] !== newStates[featureKey]) {
-        console.log(`Feature changed: "${featureKey}" is now ${newStates[featureKey] ? 'ENABLED' : 'DISABLED'}`);
-        handleFeatureChange(featureKey, newStates[featureKey]);
-      }
-    });
-  }
-);
-
-async function handleFeatureChange(featureKey, isEnabled) {
-
-  if (featureKey === 'entitiesFiltering') {
-    if (isEnabled) {
-      console.log("INJECT")
-      chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-        if (tabs.length > 0) {
-          const tabId = tabs[0].id;
-          await browser.scripting.executeScript({
-            target: { tabId },
-            func: injectGTMHelper,
-            world: 'MAIN'
-          });
-        }
-      });
-    }
-  }
-
-  if (featureKey === 'consentStatusReporting') {
-    try {
-      console.log("ASDASD")
-      if (isEnabled) {
-        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-          if (tabs.length > 0) {
-            const tabId = tabs[0].id;
-            await browser.scripting.executeScript({
-              target: { tabId },
-              func: () => {
-                console.log("ENABLE FEATURE: ConsentStatusHelper")
-                if (window.__stape && window.__stape.getFeature('ConsentStatusHelper')) {
-                  window.__stape.getFeature('ConsentStatusHelper').enable();
-                } else {
-                  console.warn('StapeHelper not found or ConsentStatusHelper feature not available');
-                }
-              },
-              world: 'MAIN'
-            });
-          }
-        });
-
-
-      } else {
-        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-          if (tabs.length > 0) {
-            const tabId = tabs[0].id;
-            await browser.scripting.executeScript({
-              target: { tabId },
-              func: () => {
-                console.log("DISABLE FEATURE: ConsentStatusHelper")
-                if (window.__stape && window.__stape.getFeature('ConsentStatusHelper')) {
-                  window.__stape.getFeature('ConsentStatusHelper').disable();
-                } else {
-                  console.warn('StapeHelper not found or ConsentStatusHelper feature not available');
-                }
-              },
-              world: 'MAIN'
-            });
-          }
-        });
-
-
-
-      }
-    } catch (error) {
-      console.error('Failed to execute script:', error);
-    }
-
-  }
-  // Your logic here based on the specific feature and status
-  if (featureKey === 'tagTypesColouring') {
-    try {
-
-      if (isEnabled) {
-        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-          if (tabs.length > 0) {
-            const tabId = tabs[0].id;
-            await browser.scripting.executeScript({
-              target: { tabId },
-              func: () => {
-                console.log("ENABLE FEATURE")
-                if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
-                  window.__stape.getFeature('GTMCardHighlighting').enable();
-                } else {
-                  console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
-                }
-              },
-              world: 'MAIN'
-            });
-          }
-        });
-
-
-      } else {
-        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
-          if (tabs.length > 0) {
-            const tabId = tabs[0].id;
-            await browser.scripting.executeScript({
-              target: { tabId },
-              func: () => {
-                console.log("DISABLE FEATURE")
-                if (window.__stape && window.__stape.getFeature('GTMCardHighlighting')) {
-                  window.__stape.getFeature('GTMCardHighlighting').disable();
-                } else {
-                  console.warn('StapeHelper not found or GTMCardHighlighting feature not available');
-                }
-              },
-              world: 'MAIN'
-            });
-          }
-        });
-
-
-
-      }
-    } catch (error) {
-      console.error('Failed to execute script:', error);
-    }
-  }
-}
-
-const activeTooltip = ref(null)
-
-// Helper functions
-const getFeatureTitle = (key) => {
-  const titles = {
-    jsonFormatter: 'JSON Formatter',
-    urlFormatter: 'URL Formatter',
-    tagTypesColouring: 'Tag Type Colors',
-    tagStatusColouring: 'Tag Status Colors',
-    consentStatusReporting: 'Consent Status',
-    entitiesFilteringPreview: 'Preview Filtering',
-    entitiesFiltering: 'UI Filtering'
-  }
-  return titles[key] || key
-}
-const activeSettingsCount = computed(() => {
-  return Object.values(settings.features).filter(feature => feature.enabled).length
-})
-const compactMode = ref(true)
-const toggleSetting = (key) => {
-  settings.value.features[key].enabled = !settings.value.features[key].enabled
-}
 
 const openFeatureRequest = () => {
   window.open('https://feature.stape.io', '_blank')
 }
-onMounted(async () => {
-  const data = await storage.getItem('local:settings');
-  if (data) settings.value = data
-  loading.value = false
-})
 </script>
 
 <style scoped>
-/* Enhanced switch animations */
-@keyframes slideIn {
-  from {
-    transform: translateX(0);
-  }
-
-  to {
-    transform: translateX(1.75rem);
-  }
-}
-
-@keyframes slideOut {
-  from {
-    transform: translateX(1.75rem);
-  }
-
-  to {
-    transform: translateX(0);
-  }
-}
-
-/* Smooth transitions for all elements */
 button {
   transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
 }
@@ -389,7 +131,6 @@ button:active {
   transform: scale(0.98);
 }
 
-/* Focus states */
 button:focus-visible {
   outline: 2px solid #f97316;
   outline-offset: 2px;

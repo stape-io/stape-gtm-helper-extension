@@ -1,117 +1,83 @@
-import injectStapeHelper from '/scripts/injectStapeHelper'
+import { onMessage } from "webext-bridge/background";
+
+
+// GTM environment detection rules
+const GTM_RULES = {
+  GTMUI: /^https:\/\/tagmanager\.google\.com/,
+  GTMTA: /^https:\/\/tagassistant\.google\.com/,
+  // GTMTASS requires window variable check, not just URL
+};
 
 export default defineBackground(() => {
-  // Detect GTM/GTM PREVIEW/SSGTM PREVIEW
-  /*
-  const environments = {
-    "GTMUI": "GTM ADMIN UI",
-    "GTMTA": "GTM TAG ASSISTANT, PREVIEW MODE",
-    "GTMTASS": "GTM TAG ASSISTANT, SERVER SIDE"
+
+  // Store current page status per tab
+  const tabStatus = new Map();
+
+  // Check if URL matches GTM rules (basic check)
+  function detectGTMEnvironment(url: string) {
+    if (GTM_RULES.GTMUI.test(url)) return 'GTMUI';
+    if (GTM_RULES.GTMTA.test(url)) return 'GTMTA';
+    return null;
   }
-  */ 
 
-  const settings = {
+  // Listen for response headers to detect server-side GTM
+  const isChrome = typeof chrome !== "undefined" && (
+    typeof browser === "undefined" ||
+    !browser.runtime || // polyfill usually defines browser.runtime
+    !browser.runtime.getBrowserInfo // Chrome polyfill might lack this method
+  );
 
-    features: {
-      jsonFormatter: {
-        description: 'Show beautified JSON of incoming/outgoing requests in server GTM preview',
-        enabled: true,
-        activableOn: ["GTMTASS"]
-      },
-      urlFormatter: {
-        description: 'Show beautified URL parameters of incoming/outgoing requests in server GTM preview',
-        enabled: true,
-        activableOn: ["GTMTASS"]
-      },
-      tagTypesColouring: {
-        description: 'Add color indication for different tag types e.g. orange for GA4, blue for Meta etc.',
-        enabled: true,
-        activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
-      },
-      tagStatusColouring: {
-        description: 'Highlight failed tag statuses in red for web & server GTM preview',
-        enabled: true,
-        activableOn: ["GTMUI", "GTMTA", "GTMTASS"]
-      },
-      consentStatusReporting: {
-        description: 'Display consent parameters in server GTM preview based on GA4/Data Tag payloads',
-        enabled: true,
-        activableOn: ["GTMTASS"]
-      },
-      entitiesFilteringPreview: {
-        description: 'Option to filter Tags and variableks on preview mode',
-        enabled: true,
-        activableOn: ["GTMTA", "GTMTASS"]
-      },
-      entitiesFiltering: {
-        description: 'Option to filter Tags and variableks on UI',
-        enabled: true,
-        activableOn: ["GTMUI"]
+  const listenerOptions = ['responseHeaders'];
+  if (isChrome) {
+     listenerOptions.push('extraHeaders'); // Only add in Chrome
+  }
+
+  browser.webRequest.onHeadersReceived.addListener(
+    (details: any) => {
+      if (details.frameId !== 0 || details.type !== "main_frame") return;
+      const environment = detectGTMEnvironment(details.url);
+
+      if (environment) {
+        console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
+        tabStatus.set(details.tabId, { environment, url: details.url });
+      } else {
+        tabStatus.delete(details.tabId);
       }
-    }
-  } 
 
-  browser.webNavigation.onDOMContentLoaded.addListener(async (details) => {
+      if (details.responseHeaders) {
 
-    /**
-     * Checks if GTM Debug Bootstrap is available in the page
-     * @param {number} tabId - The ID of the tab to check
-     * @returns {Promise<boolean>} - Whether GTM Debug Bootstrap is available
-     */
-    const hasGtmDebugBootstrap = async (tabId) => {
-      try {
-        const results = await browser.scripting.executeScript({
-          target: { tabId },
-          func: () => Boolean(window._gtmDebugBootstrap),
-          world: 'MAIN'
-        });
-        return results[0]?.result || false;
-      } catch (error) {
-        return false;
-      }
-    };
+        const setCookieHeaders = details.responseHeaders
+          .filter((header: any) => header.name.toLowerCase() === 'set-cookie')
+          .map((header: any) => header.value);
 
-    const isMainFrame = (details) => {
-      return details.frameId === 0 && details.frameType === "outermost_frame";
-    };
+        // I don't like the first approach of injecting code in all navigated pages.
+        // Check for GTM debug cookie headers instead
+        // Note. Firefox and Safari won't expose set-cookie headers, 
+        // a Failback for checking a global variable will be needed here.
+        const hasGTMCookies = setCookieHeaders.some((cookie: string) =>
+          cookie.includes('gtm_auth=') ||
+          cookie.includes('gtm_debug=') ||
+          cookie.includes('gtm_preview=')
+        );
 
-    // Only process main frame navigations
-    if (!isMainFrame(details)) {
-      return;
-    }
-
-    const { tabId, url } = details;
-    let currentEnvironment;
-    const isTagAssistant = (url) => {
-      return url.startsWith('https://tagassistant.google.com/');
-    };
-    const isGoogleTagManager = (url) => {
-      return url.startsWith('https://tagmanager.google.com/');
-    };
-
-    if (isGoogleTagManager(url)) currentEnvironment = "GTMUI"
-    if (isTagAssistant(url)) currentEnvironment = "GTMTA"
-    if (!currentEnvironment) {
-      try {
-        // Since on SS users may be using their own domains and paths, let's detect if the SSUI is loaded
-        if (!currentEnvironment) {
-          const hasGtmDebug = await hasGtmDebugBootstrap(tabId);
-          if (hasGtmDebug) {
-            currentEnvironment = "GTMTASS"
-          }
+        if (hasGTMCookies) {
+          tabStatus.set(details.tabId, { environment: 'GTMTASS', url: details.url });
         }
-      } catch (error) {
+
       }
-    }
+    },
+    { urls: ['<all_urls>'] },
+    listenerOptions
+  );
 
-
-    if (currentEnvironment !== null) {
-      browser.scripting.executeScript({
-        target: { tabId },
-        func: injectStapeHelper,
-        args: [{ GTMCardHighlighting: false }],
-        world: 'MAIN'
-      }) 
-    }
+  onMessage("GET_CURRENT_TAB_STATUS", () => {
+    return browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+      if (tabs[0]) {
+        const status = tabStatus.get(tabs[0].id);
+        console.log("CURRENT TAB STATUS FROM BG", status);
+        return status; // Send status back
+      }
+      return null; // No active tab
+    });
   });
 });
