@@ -1,45 +1,71 @@
 name: Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      tag:
-        description: 'Release tag (e.g. 3.0.0-beta0)'
-        required: true
+  push:
+    branches:
+      - pre-release
+      - main
 
 jobs:
   release:
     runs-on: ubuntu-latest
-    env:
-      TAG_NAME: ${{ github.event.inputs.tag }}
+
     steps:
+      # Checkout code
       - uses: actions/checkout@v4
 
+      # Setup Bun
       - name: Setup Bun
         run: |
           curl -fsSL https://bun.sh/install | bash
           echo "$HOME/.bun/bin" >> $GITHUB_PATH
 
+      # Check Bun version
       - name: Check Bun version
         run: bun --version
 
+      # Install dependencies
       - name: Install dependencies
         run: bun install
 
-      - name: Zip extensions
+      # Build zip files
+      - name: Build Extensions
         run: |
           bun run zip
           bun run zip:firefox
 
+      # Extract version from zip filename
+      - name: Extract version from zip filename
+        id: vars
+        run: |
+          # Get version from chrome zip filename
+          ZIP_FILE=$(ls .output/stape-gtm-helper-*-chrome.zip)
+          # Extract version using pattern
+          VERSION=$(echo "$ZIP_FILE" | sed -E 's|.*stape-gtm-helper-(.*)-chrome\.zip|\1|')
+          
+          if [[ "${GITHUB_REF##*/}" == "pre-release" ]]; then
+            DATE=$(date +'%Y-%m-%d')
+            RELEASE_NAME="$VERSION ($DATE)"
+            PRERELEASE=true
+          else
+            RELEASE_NAME="$VERSION"
+            PRERELEASE=false
+          fi
+
+          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          echo "RELEASE_NAME=$RELEASE_NAME" >> $GITHUB_ENV
+          echo "PRERELEASE=$PRERELEASE" >> $GITHUB_ENV
+
+      # Create GitHub Release
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
-          tag_name: ${{ env.TAG_NAME }}
-          name: Release ${{ env.TAG_NAME }}
-          prerelease: ${{ contains(env.TAG_NAME, 'beta') }}
+          tag_name: ${{ env.VERSION }}
+          name: ${{ env.RELEASE_NAME }}
+          prerelease: ${{ env.PRERELEASE }}
           files: |
-            .output/stape-gtm-helper-${{ env.TAG_NAME }}-chrome.zip
-            .output/stape-gtm-helper-${{ env.TAG_NAME }}-firefox.zip
-            .output/stape-gtm-helper-${{ env.TAG_NAME }}-firefox-sources.zip
+            .output/stape-gtm-helper-${{ env.VERSION }}-chrome.zip
+            .output/stape-gtm-helper-${{ env.VERSION }}-firefox.zip
+            .output/stape-gtm-helper-${{ env.VERSION }}-firefox-sources.zip
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
