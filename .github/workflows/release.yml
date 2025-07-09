@@ -1,0 +1,61 @@
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.2.3)'
+        required: true
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Zip extensions
+        run: |
+          pnpm zip
+          pnpm zip:firefox
+
+      - name: Rename zip files with version
+        run: |
+          mv .output/stape-gtm-helper-extension-chrome.zip .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-chrome.zip
+          mv .output/stape-gtm-helper-extension-firefox.zip .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-firefox.zip
+
+      - name: Create GitHub Release
+        id: create_release
+        uses: actions/create-release@v1
+        with:
+          tag_name: ${{ github.event.inputs.tag }}
+          release_name: Release ${{ github.event.inputs.tag }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Upload Chrome Zip to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-chrome.zip
+          asset_name: stape-gtm-helper-extension-${{ github.event.inputs.tag }}-chrome.zip
+          asset_content_type: application/zip
+
+      - name: Upload Firefox Zip to Release
+        uses: actions/upload-release-asset@v1
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-firefox.zip
+          asset_name: stape-gtm-helper-extension-${{ github.event.inputs.tag }}-firefox.zip
+          asset_content_type: application/zip
