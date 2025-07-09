@@ -1,6 +1,9 @@
 name: Release
 
 on:
+  push:
+    branches:
+      - '3.0.0-beta1'
   workflow_dispatch:
     inputs:
       tag:
