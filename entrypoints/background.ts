@@ -1,4 +1,5 @@
-import { onMessage } from "webext-bridge/background";
+import { onMessage, sendMessage } from "webext-bridge/background";
+
 
 
 // GTM environment detection rules
@@ -29,14 +30,34 @@ export default defineBackground(() => {
 
   const listenerOptions = ['responseHeaders'];
   if (isChrome) {
-     listenerOptions.push('extraHeaders'); // Only add in Chrome
+    listenerOptions.push('extraHeaders'); // Only add in Chrome
   }
+
+  browser.webNavigation.onDOMContentLoaded.addListener(async(details) => {
+    if (details.parentFrameId === -1 && details.frameType === "outermost_frame" && details.frameId === 0) {
+      if (details.frameId === 0) {
+        const isGTMEnv = tabStatus.get(details.tabId);
+        if(isGTMEnv){
+          console.log(`IS A GTM ENV: ${details.url}`, isGTMEnv);
+          // TODO, create a composable
+          await browser.scripting.executeScript({
+            target: { tabId: details.tabId },
+            world: 'MAIN',
+            func: ()=>{
+              alert('Hi')
+            }
+          });
+        }
+        
+      }
+    }
+  });
 
   browser.webRequest.onHeadersReceived.addListener(
     (details: any) => {
       if (details.frameId !== 0 || details.type !== "main_frame") return;
+      console.log(`REQ`, details);
       const environment = detectGTMEnvironment(details.url);
-
       if (environment) {
         console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
         tabStatus.set(details.tabId, { environment, url: details.url });
@@ -79,5 +100,71 @@ export default defineBackground(() => {
       }
       return null; // No active tab
     });
+  });
+
+  // Helper functions for injecting JS and CSS
+  async function getCurrentTab() {
+    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
+    return tabs[0];
+  }
+
+  onMessage("INJECT_SCRIPT_TO_CURRENT_TAB", async ({ data }: { data: any }) => {
+    const tab = await getCurrentTab();
+    if (!tab?.id) return { success: false, error: "No active tab found" };
+
+    try {
+      const result = await sendMessage("INJECT_SCRIPT", data, `content-script@${tab.id}`);
+      return result;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  onMessage("INJECT_STYLE_TO_CURRENT_TAB", async ({ data }: { data: any }) => {
+    const tab = await getCurrentTab();
+    if (!tab?.id) return { success: false, error: "No active tab found" };
+
+    try {
+      const result = await sendMessage("INJECT_STYLE", data, `content-script@${tab.id}`);
+      return result;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  onMessage("INJECT_EXTERNAL_SCRIPT_TO_CURRENT_TAB", async ({ data }: { data: any }) => {
+    const tab = await getCurrentTab();
+    if (!tab?.id) return { success: false, error: "No active tab found" };
+
+    try {
+      const result = await sendMessage("INJECT_EXTERNAL_SCRIPT", data, `content-script@${tab.id}`);
+      return result;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  onMessage("INJECT_EXTERNAL_STYLE_TO_CURRENT_TAB", async ({ data }: { data: any }) => {
+    const tab = await getCurrentTab();
+    if (!tab?.id) return { success: false, error: "No active tab found" };
+
+    try {
+      const result = await sendMessage("INJECT_EXTERNAL_STYLE", data, `content-script@${tab.id}`);
+      return result;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
+  });
+
+  onMessage("REMOVE_INJECTED_FROM_CURRENT_TAB", async ({ data }: { data: any }) => {
+    const tab = await getCurrentTab();
+    if (!tab?.id) return { success: false, error: "No active tab found" };
+
+    try {
+      const result = await sendMessage("REMOVE_INJECTED", data, `content-script@${tab.id}`);
+      return result;
+    } catch (error) {
+      return { success: false, error: (error as Error).message };
+    }
   });
 });
