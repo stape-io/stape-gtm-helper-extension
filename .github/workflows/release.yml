@@ -17,11 +17,15 @@ jobs:
       # Checkout repo
       - uses: actions/checkout@v4
 
-      # Setup Bun
+      # Install Bun manually
       - name: Setup Bun
-        uses: oven-sh/bun-action@v1
-        with:
-          bun-version: latest # You can pin to a specific version if needed
+        run: |
+          curl -fsSL https://bun.sh/install | bash
+          echo "$HOME/.bun/bin" >> $GITHUB_PATH
+
+      # Confirm Bun is installed
+      - name: Check Bun version
+        run: bun --version
 
       # Install dependencies with Bun
       - name: Install dependencies
@@ -39,7 +43,7 @@ jobs:
           mv .output/stape-gtm-helper-extension-chrome.zip .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-chrome.zip
           mv .output/stape-gtm-helper-extension-firefox.zip .output/stape-gtm-helper-extension-${{ github.event.inputs.tag }}-firefox.zip
 
-      # Create GitHub release
+      # Create GitHub Release
       - name: Create GitHub Release
         id: create_release
         uses: actions/create-release@v1
