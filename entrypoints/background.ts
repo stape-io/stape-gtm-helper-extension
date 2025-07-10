@@ -38,14 +38,12 @@ export default defineBackground(() => {
       if (details.frameId === 0) {
         const isGTMEnv = tabStatus.get(details.tabId);
         if(isGTMEnv){
-          console.log(`IS A GTM ENV: ${details.url}`, isGTMEnv);
-          // TODO, create a composable
           await browser.scripting.executeScript({
             target: { tabId: details.tabId },
             injectImmediately: true,
             world: 'MAIN',
             func: ()=>{
-              alert('Hi')
+              console.log("LOADING STAPE HELPER")
             }
           });
         }
