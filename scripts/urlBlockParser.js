@@ -1,0 +1,493 @@
+// HTTP URL Details Monitor with Generic Request Parsing
+export function urlBlockParser() {
+    
+  // HTTP URL Details Monitor with Generic Request Parsing
+  function HTTPUrlDetailsMonitor() {
+    const monitor = {
+      observer: null,
+      detectedComponents: new Set(),
+      callbacks: [],
+      debounceTimer: null,
+      parsedComponents: new Map()
+    };
+
+    monitor.onNewHttpUrlDetails = function(callback) {
+      monitor.callbacks.push(callback);
+    };
+
+    // Get protocol from URL or use current page's protocol
+    monitor.getProtocol = function(url) {
+      if (url.includes('://')) {
+        return url.split('://')[0] + ':';
+      }
+      return window.location.protocol;
+    };
+
+    // Get hostname from URL or use current page's hostname
+    monitor.getHostname = function(url) {
+      if (url.includes('://')) {
+        const urlObj = new URL(url);
+        return urlObj.hostname;
+      }
+      return window.location.hostname;
+    };
+
+    // Parse URL parameters into a simple object
+    monitor.parseUrlParameters = function(url) {
+      if (!url || !url.includes('?')) return null;
+
+      try {
+        const queryString = url.split('?')[1].split('#')[0];
+        const params = new URLSearchParams(queryString);
+        return Object.fromEntries(params);
+      } catch (error) {
+        console.warn('Error parsing URL parameters:', error);
+        return null;
+      }
+    }
+
+    // Create a simple table display
+    monitor.createTableDisplay = function(method, url, params, _originalPre, _originalMethodCell) {
+      // Inject CSS for gtm-debug-card
+      // if (!document.querySelector('#gtm-debug-card-style')) {
+
+      //}
+
+      const container = document.createElement('div');
+      container.className = 'parsed-request-container';
+      container.style.cssText = `
+        background: #f8f9fa;
+        border: 1px solid #e9ecef;
+        border-radius: 6px;
+        padding: 12px;
+        margin: 4px 0;
+        font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+        font-size: 13px;
+      `;
+
+      // Header with method and buttons
+      const header = document.createElement('div');
+      header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
+      
+      const methodSpan = document.createElement('span');
+      methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${monitor.getHostname(url)}${url.split('?')[0]}`;
+      methodSpan.style.cssText = 'font-weight: bold; color: #495057; display: flex; align-items: center;';
+      
+      const buttonGroup = document.createElement('div');
+      buttonGroup.style.cssText = 'display: flex; gap: 6px;';
+      
+      const toggleBtn = document.createElement('button');
+      toggleBtn.textContent = 'View as JSON';
+      toggleBtn.style.cssText = `
+        background: #17a2b8;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+      `;
+
+      const copyBtn = document.createElement('button');
+      copyBtn.textContent = 'Copy';
+      copyBtn.style.cssText = `
+        background: #28a745;
+        color: white;
+        border: none;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 11px;
+        cursor: pointer;
+      `;
+
+      buttonGroup.appendChild(toggleBtn);
+      buttonGroup.appendChild(copyBtn);
+      header.appendChild(methodSpan);
+      header.appendChild(buttonGroup);
+
+      // Parameters table
+      const tableContainer = document.createElement('div');
+      tableContainer.className = 'table-content';
+      
+      if (params && Object.keys(params).length > 0) {
+        const table = document.createElement('table');
+        table.style.cssText = `
+          width: 100%;
+          border-collapse: collapse;
+          font-size: 12px;
+          background: white;
+          border-radius: 4px;
+          overflow: hidden;
+          box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+        `;
+
+        // Table header
+        const thead = document.createElement('thead');
+        thead.innerHTML = `
+          <tr style="background: #e9ecef;">
+            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #495057; border-bottom: 1px solid #dee2e6;">Parameter</th>
+            <th style="padding: 8px 12px; text-align: left; font-weight: 600; color: #495057; border-bottom: 1px solid #dee2e6;">Value</th>
+          </tr>
+        `;
+        table.appendChild(thead);
+
+        // Table body
+        const tbody = document.createElement('tbody');
+        Object.entries(params).forEach(([key, value], index) => {
+          const row = document.createElement('tr');
+          row.style.cssText = `
+            ${index % 2 === 0 ? 'background: #f8f9fa;' : 'background: white;'}
+            border-bottom: 1px solid #dee2e6;
+          `;
+          
+          // Truncate long values
+          let displayValue = String(value);
+          if (String(value).length > 80) {
+            displayValue = String(value).substring(0, 80) + '...';
+          }
+
+          row.innerHTML = `
+            <td style="padding: 8px 12px; font-family: monospace; color: #d73a49; font-weight: 500; vertical-align: top; word-break: break-word;">${key}</td>
+            <td style="padding: 8px 12px; font-family: monospace; color: #032f62; vertical-align: top; word-break: break-word;" title="${String(value).length > 80 ? String(value) : ''}">${displayValue}</td>
+          `;
+          
+          tbody.appendChild(row);
+        });
+        table.appendChild(tbody);
+        tableContainer.appendChild(table);
+      } else {
+        tableContainer.innerHTML = '<div style="color: #6c757d; text-align: center; padding: 20px;">No parameters found</div>';
+      }
+
+      // Object view container
+      const objectContainer = document.createElement('div');
+      objectContainer.className = 'object-content';
+      objectContainer.style.cssText = 'display: none;';
+      
+      const objectPre = document.createElement('pre');
+      objectPre.style.cssText = `
+        background: white;
+        border: 1px solid #dee2e6;
+        border-radius: 4px;
+        padding: 16px;
+        margin: 0;
+        font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-size: 12px;
+        line-height: 1.4;
+        color: #495057;
+        overflow-x: auto;
+        white-space: pre-wrap;
+        word-break: break-word;
+      `;
+
+      // Create formatted object string
+      const objectData = {
+        method: method,
+        protocol: monitor.getProtocol(url),
+        hostname: monitor.getHostname(url),
+        pathname: url.split('?')[0],
+        searchParams: params || {}
+      };
+
+      objectPre.textContent = JSON.stringify(objectData, null, 2);
+      objectContainer.appendChild(objectPre);
+
+      // View state management
+      let currentView = 'table'; // 'table' or 'json'
+        const style = document.createElement('style');
+        style.id = 'gtm-debug-card-style';
+        style.textContent = `
+          .gtm-debug-card {
+            display: block!important;
+          }
+        `;
+        document.head.appendChild(style);
+      // Copy functionality - always as JSON
+      const copyToClipboard = () => {
+        const objectData = {
+          method: method,
+          protocol: monitor.getProtocol(url),
+          hostname: monitor.getHostname(url),
+          pathname: url.split('?')[0],
+          searchParams: params || {}
+        };
+        
+        const jsonText = JSON.stringify(objectData, null, 2);
+
+        navigator.clipboard.writeText(jsonText).then(() => {
+          const originalText = copyBtn.textContent;
+          copyBtn.textContent = 'Copied!';
+          copyBtn.style.background = '#20c997';
+          setTimeout(() => {
+            copyBtn.textContent = originalText;
+            copyBtn.style.background = '#28a745';
+          }, 1500);
+        }).catch(err => {
+          console.error('Failed to copy to clipboard:', err);
+          copyBtn.textContent = 'Failed';
+          copyBtn.style.background = '#dc3545';
+          setTimeout(() => {
+            copyBtn.textContent = 'Copy';
+            copyBtn.style.background = '#28a745';
+          }, 1500);
+        });
+      };
+
+      // Toggle button functionality
+      toggleBtn.onclick = () => {
+        if (currentView === 'table') {
+          // Switch to JSON view
+          tableContainer.style.display = 'none';
+          objectContainer.style.display = 'block';
+          toggleBtn.textContent = 'View as Table';
+          toggleBtn.style.background = '#6c757d';
+          currentView = 'json';
+        } else {
+          // Switch to table view
+          tableContainer.style.display = 'block';
+          objectContainer.style.display = 'none';
+          toggleBtn.textContent = 'View as JSON';
+          toggleBtn.style.background = '#17a2b8';
+          currentView = 'table';
+        }
+      };
+
+      copyBtn.onclick = copyToClipboard;
+
+      container.appendChild(header);
+      container.appendChild(tableContainer);
+      container.appendChild(objectContainer);
+
+      return container;
+    }
+
+    // Process and enhance http-url-details components
+    monitor.enhanceComponent = function(component) {
+      const componentId = monitor.getComponentId(component);
+      
+      if (monitor.parsedComponents.has(componentId)) {
+        return null;
+      }
+
+      const info = monitor.extractHttpUrlInfo(component);
+      
+      const methodCell = component.querySelector('.gtm-debug-table-cell--query-param');
+      const urlCell = component.querySelector('.gtm-debug-table-cell--query-param + .gtm-debug-table-cell');
+      const urlPre = urlCell?.querySelector('pre');
+      
+      if (urlPre && info.url) {
+        const params = monitor.parseUrlParameters(info.url);
+        
+        // Hide the entire method cell and the URL pre element
+        if (methodCell) methodCell.style.display = 'none';
+        urlPre.style.display = 'none';
+        
+        const tableDisplay = monitor.createTableDisplay(info.method || '', info.url || '', params, urlPre, methodCell);
+        urlCell?.appendChild(tableDisplay);
+        
+        monitor.parsedComponents.set(componentId, {
+          component,
+          params,
+          originalPre: urlPre,
+          originalMethodCell: methodCell,
+          tableDisplay
+        });
+
+        info.params = params;
+        info.enhanced = true;
+      }
+
+      return info;
+    }
+
+    // Extract HTTP request info from component
+    monitor.extractHttpUrlInfo = function(component) {
+      const info = {
+        component: component,
+        timestamp: new Date().toISOString(),
+        method: null,
+        url: null,
+        enhanced: false
+      };
+
+      const methodCell = component.querySelector('.gtm-debug-table-cell--query-param pre');
+      if (methodCell) {
+        info.method = methodCell.textContent?.trim() || null;
+      }
+
+      const urlCell = component.querySelector('.gtm-debug-table-cell--query-param + .gtm-debug-table-cell pre');
+      if (urlCell) {
+        info.url = urlCell.textContent?.trim() || null;
+      }
+
+      return info;
+    };
+
+    monitor.getComponentId = function(component) {
+      // Use the element itself as a unique identifier
+      if (!component.hasAttribute('data-stape-id')) {
+        component.setAttribute('data-stape-id', `stape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+      }
+      return component.getAttribute('data-stape-id') || '';
+    };
+
+    monitor.processNewComponents = function() {
+      if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
+      monitor.debounceTimer = setTimeout(() => {
+        const currentComponents = document.querySelectorAll('http-url-details');
+        const newComponents = [];
+
+        // Clean up tracking for components no longer in DOM
+        monitor.cleanupRemovedComponents();
+
+        currentComponents.forEach((component) => {
+          const componentId = monitor.getComponentId(component);
+          if (!monitor.detectedComponents.has(componentId)) {
+            monitor.detectedComponents.add(componentId);
+            const enhancedInfo = monitor.enhanceComponent(component);
+            if (enhancedInfo) {
+              newComponents.push(enhancedInfo);
+            }
+          }
+        });
+
+        if (newComponents.length > 0) {
+          monitor.executeCallbacks(newComponents);
+        }
+      }, 100);
+    };
+
+    // Clean up tracking for components that are no longer in the DOM
+    monitor.cleanupRemovedComponents = function() {
+      const currentComponentIds = new Set();
+      document.querySelectorAll('http-url-details[data-stape-id]').forEach(component => {
+        const id = component.getAttribute('data-stape-id');
+        if (id) currentComponentIds.add(id);
+      });
+
+      // Remove tracking for components no longer in DOM
+      for (const [componentId] of monitor.parsedComponents) {
+        if (!currentComponentIds.has(componentId)) {
+          monitor.parsedComponents.delete(componentId);
+          monitor.detectedComponents.delete(componentId);
+        }
+      }
+    };
+
+    // Start monitoring
+    monitor.start = function() {
+      // Clear caches to ensure fresh start
+      monitor.detectedComponents.clear();
+      monitor.parsedComponents.clear();
+      
+      // Process existing components
+      monitor.processNewComponents();
+
+      monitor.observer = new MutationObserver((mutations) => {
+        let shouldProcess = false;
+        mutations.forEach((mutation) => {
+          // Check for added nodes
+          mutation.addedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node;
+              if (element.tagName === 'HTTP-URL-DETAILS' || element.querySelector?.('http-url-details')) {
+                shouldProcess = true;
+              }
+            }
+          });
+          
+          // Check for removed nodes to trigger cleanup
+          mutation.removedNodes.forEach((node) => {
+            if (node.nodeType === Node.ELEMENT_NODE) {
+              const element = node;
+              if (element.tagName === 'HTTP-URL-DETAILS' || element.querySelector?.('http-url-details')) {
+                shouldProcess = true;
+              }
+            }
+          });
+        });
+        if (shouldProcess) {
+          monitor.processNewComponents();
+        }
+      });
+
+      monitor.observer.observe(document.body, { childList: true, subtree: true });
+      console.log('STAPE-IO HELPER: URL Block Parser');
+    };
+
+    // Stop monitoring and restore all components
+    monitor.stop = function() {
+      if (monitor.observer) {
+        monitor.observer.disconnect();
+        monitor.observer = null;
+        if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
+        
+        // Automatically restore all components when stopping
+        monitor.restoreAll();
+        
+        console.log('HTTP Request Monitor stopped and all components restored');
+      }
+    };
+
+    monitor.executeCallbacks = function(components) {
+      monitor.callbacks.forEach(callback => {
+        try { callback(components); } catch (error) {
+          console.error('Error in callback:', error);
+        }
+      });
+    };
+
+    monitor.getStats = function() {
+      return {
+        totalDetected: monitor.detectedComponents.size,
+        totalParsed: monitor.parsedComponents.size,
+        currentlyVisible: document.querySelectorAll('http-url-details').length,
+        isMonitoring: monitor.observer !== null
+      };
+    };
+
+    monitor.clearCache = function() {
+      monitor.detectedComponents.clear();
+      monitor.parsedComponents.clear();
+      console.log('Cache cleared');
+    };
+
+    // Restore all components to their original state
+    monitor.restoreAll = function() {
+      monitor.parsedComponents.forEach(({ originalPre, originalMethodCell, tableDisplay }) => {
+        // Show original elements
+        originalPre.style.display = 'block';
+        if (originalMethodCell) originalMethodCell.style.display = 'table-cell';
+        
+        // Remove the enhanced table display
+        if (tableDisplay?.parentNode) {
+          tableDisplay.parentNode.removeChild(tableDisplay);
+        }
+      });
+      
+      monitor.parsedComponents.clear();
+      console.log('All components restored to original state');
+    };
+
+    return monitor;
+  }
+
+  // Initialize and start
+  const httpUrlMonitor = HTTPUrlDetailsMonitor();
+
+  httpUrlMonitor.onNewHttpUrlDetails((components) => {
+    console.log(`Enhanced ${components.length} HTTP request(s) with table view`);
+    components.forEach((info, index) => {
+      const paramCount = info.params ? Object.keys(info.params).length : 0;
+      console.log(`Request ${index + 1}: ${info.method} - ${paramCount} parameters`);
+    });
+  });
+
+  // Auto-start the monitor
+  setTimeout(() => {
+    httpUrlMonitor.start();
+  }, 500);
+
+  // Make it globally available for debugging
+  window.httpUrlMonitor = httpUrlMonitor;
+}
