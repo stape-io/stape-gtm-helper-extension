@@ -1,19 +1,19 @@
 <template>
-  <div class="bg-white/90 rounded-2xl shadow-sm border border-gray-100 p-6 content-fade-in">
+  <div class="bg-white/90 rounded-2xl shadow-sm border border-gray-100 py-2 px-4 content-fade-in">
     <!-- Header with clean typography -->
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between mb-1">
       <h2 class="text-lg font-medium text-gray-900 tracking-tight"></h2>
       <div class="flex items-center gap-2">
-        <span class="text-xs text-gray-400">{{ features.filter(f => f.enabled).length }}/{{ features.length }}</span>
+
         <button 
           @click="toggleCompactMode" 
-          class="text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all duration-200"
+          class="cursor-pointer text-gray-400 hover:text-gray-600 p-1.5 rounded-lg hover:bg-gray-50 transition-all duration-200"
           :title="compactMode ? 'Show details' : 'Hide details'"
         >
-          <svg v-if="compactMode" class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-if="compactMode" class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4"/>
           </svg>
-          <svg v-else class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <svg v-else class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 16V8m0 0l-6 6m6-6l-6-6M4 8v8m0 0l6-6m-6 6l6 6"/>
           </svg>
         </button>
@@ -25,7 +25,7 @@
       <div v-for="feature in features" :key="feature.id" 
            class="group py-1 first:pt-0 last:pb-0 hover:bg-gray-25 -mx-2 px-2 rounded-lg transition-colors duration-150">
         
-        <div class="flex items-start justify-between gap-4">
+        <div class="flex items-center justify-between gap-4">
           <!-- Content -->
           <div class="flex-1 min-w-0">
             <div class="flex items-center gap-3">
@@ -52,14 +52,14 @@
           
           <!-- Toggle switch -->
           <div class="flex-shrink-0">
-            <label class="relative inline-flex items-center cursor-pointer">
+            <label class="relative  items-center cursor-pointer">
               <input 
                 type="checkbox" 
                 :checked="feature.enabled" 
                 @change="toggleFeature(feature.id)"
                 class="sr-only peer"
               >
-              <div class="w-10 h-5 bg-gray-200 peer-focus:outline-none rounded-full peer transition-all duration-200 peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-orange-500"></div>
+              <div class="w-11 h-6 bg-gray-200 peer-focus:outline-none rounded-full peer transition-all duration-200 peer-checked:after:translate-x-5 peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-orange-500"></div>
             </label>
           </div>
         </div>
