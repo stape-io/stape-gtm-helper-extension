@@ -33,11 +33,13 @@ export default defineBackground(() => {
   }
 
   // Inject monitor when DOM is loaded for known GTM environments
-  browser.webNavigation.onDOMContentLoaded.addListener(async(details) => {
-    if (details.parentFrameId === -1 && details.frameType === "outermost_frame" && details.frameId === 0) {
+  browser.webNavigation.onDOMContentLoaded.addListener(async (details) => {
+    
+    if (details.parentFrameId === -1 && details.frameId === 0) {
+      console.log("NAVIGATING INJECT IN", details)
       const isGTMEnv = tabStatus.get(details.tabId);
-      if(isGTMEnv){
-        if(isGTMEnv?.environment === "GTMTASS"){
+      if (isGTMEnv) {
+        if (isGTMEnv?.environment === "GTMTASS") {
           await injectMonitorToTab(details.tabId, isGTMEnv.environment);
         }
       }
@@ -48,12 +50,25 @@ export default defineBackground(() => {
   async function injectMonitorToTab(tabId: number, environment: string) {
     try {
       console.log(`Injecting HTTP monitor for ${environment} on tab ${tabId}`);
-      await browser.scripting.executeScript({
+
+      // Feature detection instead of browser detection
+      const scriptOptions: browser.scripting.ScriptInjection = {
         target: { tabId },
-        injectImmediately: true,
-        world: 'MAIN',
         func: urlBlockParser
-      });
+      };
+
+      // Try with advanced options first, fall back if not supported
+      try {
+        await browser.scripting.executeScript({
+          ...scriptOptions,
+          injectImmediately: true,
+          world: 'MAIN'
+        });
+      } catch (error) {
+        // Fallback for Firefox
+        console.log('Falling back to basic injection');
+        await browser.scripting.executeScript(scriptOptions);
+      }
     } catch (error) {
       console.error(`Failed to inject monitor on tab ${tabId}:`, error);
     }
@@ -62,7 +77,7 @@ export default defineBackground(() => {
   browser.webRequest.onHeadersReceived.addListener(
     async (details: any) => {
       if (details.frameId !== 0 || details.type !== "main_frame") return;
-      
+
       const environment = detectGTMEnvironment(details.url);
       if (environment) {
         console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
