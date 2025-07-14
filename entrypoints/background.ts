@@ -10,17 +10,14 @@ const GTM_RULES = {
 
 export default defineBackground(() => {
 
-  // Store current page status per tab
   const tabStatus = new Map();
 
-  // Check if URL matches GTM rules (basic check)
   function detectGTMEnvironment(url: string) {
     if (GTM_RULES.GTMUI.test(url)) return 'GTMUI';
     if (GTM_RULES.GTMTA.test(url)) return 'GTMTA';
     return null;
   }
 
-  // Listen for response headers to detect server-side GTM
   const isChrome = typeof chrome !== "undefined" && (
     typeof browser === "undefined" ||
     !browser.runtime || // polyfill usually defines browser.runtime
@@ -32,12 +29,13 @@ export default defineBackground(() => {
     listenerOptions.push('extraHeaders'); // Only add in Chrome
   }
 
-  // Inject monitor when DOM is loaded for known GTM environments
-  browser.webNavigation.onDOMContentLoaded.addListener(async(details) => {
-    if (details.parentFrameId === -1 && details.frameType === "outermost_frame" && details.frameId === 0) {
+  browser.webNavigation.onDOMContentLoaded.addListener(async (details) => {
+    
+    if (details.parentFrameId === -1 && details.frameId === 0) {
+      console.log("NAVIGATING INJECT IN", details)
       const isGTMEnv = tabStatus.get(details.tabId);
-      if(isGTMEnv){
-        if(isGTMEnv?.environment === "GTMTASS"){
+      if (isGTMEnv) {
+        if (isGTMEnv?.environment === "GTMTASS") {
           await injectMonitorToTab(details.tabId, isGTMEnv.environment);
         }
       }
@@ -48,12 +46,23 @@ export default defineBackground(() => {
   async function injectMonitorToTab(tabId: number, environment: string) {
     try {
       console.log(`Injecting HTTP monitor for ${environment} on tab ${tabId}`);
-      await browser.scripting.executeScript({
+
+      const scriptOptions: browser.scripting.ScriptInjection = {
         target: { tabId },
-        injectImmediately: true,
-        world: 'MAIN',
         func: urlBlockParser
-      });
+      };
+
+      try {
+        await browser.scripting.executeScript({
+          ...scriptOptions,
+          injectImmediately: true,
+          world: 'MAIN'
+        });
+      } catch (error) {
+        // Fallback for Firefox
+        console.log('Falling back to basic injection');
+        await browser.scripting.executeScript(scriptOptions);
+      }
     } catch (error) {
       console.error(`Failed to inject monitor on tab ${tabId}:`, error);
     }
@@ -62,14 +71,12 @@ export default defineBackground(() => {
   browser.webRequest.onHeadersReceived.addListener(
     async (details: any) => {
       if (details.frameId !== 0 || details.type !== "main_frame") return;
-      
+
       const environment = detectGTMEnvironment(details.url);
       if (environment) {
         console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
         tabStatus.set(details.tabId, { environment, url: details.url });
-        // Inject immediately when we detect GTM environment
       } else {
-        // Check for GTM debug cookies even if URL doesn't match
         if (details.responseHeaders) {
           const setCookieHeaders = details.responseHeaders
             .filter((header: any) => header.name.toLowerCase() === 'set-cookie')
@@ -84,13 +91,10 @@ export default defineBackground(() => {
           if (hasGTMCookies) {
             console.log(`GTM debug cookies detected (GTMTASS) on tab ${details.tabId}`);
             tabStatus.set(details.tabId, { environment: 'GTMTASS', url: details.url });
-            // Inject immediately when we detect GTM cookies
           } else {
-            // No GTM detected, remove from tracking
             tabStatus.delete(details.tabId);
           }
         } else {
-          // No response headers, remove from tracking
           tabStatus.delete(details.tabId);
         }
       }
@@ -99,8 +103,6 @@ export default defineBackground(() => {
     listenerOptions
   );
 
-
-  // Clean up when tabs are closed
   browser.tabs.onRemoved.addListener((tabId) => {
     if (tabStatus.has(tabId)) {
       console.log(`Tab ${tabId} closed, removing from tracking`);
@@ -117,11 +119,5 @@ export default defineBackground(() => {
       return null; // No active tab
     });
   });
-
-  // Helper functions for injecting JS and CSS
-  async function getCurrentTab() {
-    const tabs = await browser.tabs.query({ active: true, currentWindow: true });
-    return tabs[0];
-  }
 
 });

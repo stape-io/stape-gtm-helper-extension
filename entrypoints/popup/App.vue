@@ -1,5 +1,5 @@
 <template>
-  <div class="bg-gray-50 p-4 w-96">
+  <div class="bg-gray-50 p-4 w-96 min-w-96 max-w-96">
     <div class="max-w-2xl mx-auto">
       <!-- Header -->
       <div class="mb-4">
@@ -38,8 +38,8 @@
                 <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
                   GTM Helper
                 </h1>
-                <div class="text-xs text-gray-500 mt-1">
-                  Chrome Extension for GTM Debugging
+                <div class="text-xs mt-1" :class="gtmStatus ? 'text-green-600' : 'text-gray-500'">
+                  {{ gtmStatus ? `Environment: ${gtmStatus.environment}` : 'No GTM Environment Detected' }}
                 </div>
               </div>
             </div>
@@ -48,7 +48,7 @@
       </div>
 
       <!-- Simple Content -->
-      <div class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 p-6">
+      <div v-if="!showNewContent" class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 p-6" :class="{ 'content-fade-out': isTransitioning }">
         <div class="text-center">
           <div class="mb-4">
             <svg v-if="!gtmStatus" class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -71,15 +71,18 @@
           </div>
           
           <div class="text-xs text-gray-500">
-            Version 3.0.0-beta2
+            Version 3.0.0-beta3
           </div>
         </div>
       </div>
+      
+      <!-- Tool Features Component -->
+      <ToolFeatures v-if="showNewContent" />
 
       <!-- Footer -->
       <div class="mt-4">
         <button @click="openFeatureRequest"
-          class="w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
+          class="cursor-pointer w-full flex items-center justify-center gap-3 px-6 py-3 bg-white border border-gray-200 rounded-xl text-sm font-medium text-gray-700 hover:text-gray-900 hover:bg-gray-50 hover:border-gray-300 transition-all duration-200 shadow-sm hover:shadow-md">
           <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6v6m0 0v6m0-6h6m-6 0H6"></path>
           </svg>
@@ -98,23 +101,30 @@
 
 import { ref, onMounted } from 'vue'
 import { sendMessage } from "webext-bridge/popup";
+import ToolFeatures from './ToolFeatures.vue'
 
 // Reactive state
 const gtmStatus = ref(null)
+const showNewContent = ref(false)
+const isTransitioning = ref(false)
 
 const getCurrentTabStatus = async () => {
   try {
     const status = await sendMessage("GET_CURRENT_TAB_STATUS", {}, "background");
-    console.log("BG RESPONSE", status);
-    gtmStatus.value = status; // assign status to reactive variable
+    gtmStatus.value = status;
   } catch (error) {
-    console.error("Failed to get tab status from background:", error);
-    gtmStatus.value = null; // fallback
+    gtmStatus.value = null; 
   }
 };
 
 onMounted(() => {
   getCurrentTabStatus()
+  setTimeout(() => {
+    isTransitioning.value = true
+    setTimeout(() => {
+      showNewContent.value = true
+    }, 500)
+  }, 1000)
 })
 
 const openFeatureRequest = () => {
@@ -134,5 +144,23 @@ button:active {
 button:focus-visible {
   outline: 2px solid #f97316;
   outline-offset: 2px;
+}
+
+.content-fade-out {
+  animation: fadeOut 0.5s ease-in-out forwards;
+}
+
+.content-fade-in {
+  animation: fadeIn 0.5s ease-in-out;
+}
+
+@keyframes fadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes fadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
 }
 </style>

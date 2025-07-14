@@ -1,7 +1,5 @@
-// HTTP URL Details Monitor with Generic Request Parsing
 export function urlBlockParser() {
-    
-  // HTTP URL Details Monitor with Generic Request Parsing
+  console.log("STAPE GTM HELPER: Starting URL Blocks Parser")
   function HTTPUrlDetailsMonitor() {
     const monitor = {
       observer: null,
@@ -15,7 +13,6 @@ export function urlBlockParser() {
       monitor.callbacks.push(callback);
     };
 
-    // Get protocol from URL or use current page's protocol
     monitor.getProtocol = function(url) {
       if (url.includes('://')) {
         return url.split('://')[0] + ':';
@@ -23,7 +20,6 @@ export function urlBlockParser() {
       return window.location.protocol;
     };
 
-    // Get hostname from URL or use current page's hostname
     monitor.getHostname = function(url) {
       if (url.includes('://')) {
         const urlObj = new URL(url);
@@ -32,7 +28,6 @@ export function urlBlockParser() {
       return window.location.hostname;
     };
 
-    // Parse URL parameters into a simple object
     monitor.parseUrlParameters = function(url) {
       if (!url || !url.includes('?')) return null;
 
@@ -46,13 +41,7 @@ export function urlBlockParser() {
       }
     }
 
-    // Create a simple table display
     monitor.createTableDisplay = function(method, url, params, _originalPre, _originalMethodCell) {
-      // Inject CSS for gtm-debug-card
-      // if (!document.querySelector('#gtm-debug-card-style')) {
-
-      //}
-
       const container = document.createElement('div');
       container.className = 'parsed-request-container';
       container.style.cssText = `
