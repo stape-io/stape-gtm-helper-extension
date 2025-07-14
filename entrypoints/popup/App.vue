@@ -71,7 +71,7 @@
           </div>
           
           <div class="text-xs text-gray-500">
-            Version 3.0.0-beta2
+            Version 3.0.0-beta3
           </div>
         </div>
       </div>
