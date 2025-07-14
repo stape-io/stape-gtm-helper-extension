@@ -71,7 +71,7 @@
           </div>
           
           <div class="text-xs text-gray-500">
-            Version 3.0.0-beta3
+            Version 3.0.0-beta4
           </div>
         </div>
       </div>
@@ -100,7 +100,6 @@
 <script setup>
 
 import { ref, onMounted } from 'vue'
-import { sendMessage } from "webext-bridge/popup";
 import ToolFeatures from './ToolFeatures.vue'
 
 // Reactive state
@@ -110,7 +109,7 @@ const isTransitioning = ref(false)
 
 const getCurrentTabStatus = async () => {
   try {
-    const status = await sendMessage("GET_CURRENT_TAB_STATUS", {}, "background");
+    const status = await browser.runtime.sendMessage({ action: "GET_CURRENT_TAB_STATUS" });
     gtmStatus.value = status;
   } catch (error) {
     gtmStatus.value = null; 
