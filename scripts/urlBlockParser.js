@@ -41,6 +41,36 @@ export function urlBlockParser() {
       }
     }
 
+    monitor.syntaxHighlightJSON = function(json) {
+      // Escape HTML to prevent XSS
+      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      // Use a single comprehensive regex to tokenize and highlight
+      return json.replace(
+        /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
+        function(match, key, string, number, boolean, nullValue, brace, bracket, comma) {
+          if (key) {
+            return '<span class="json-key">' + key + ':</span>';
+          } else if (string) {
+            return '<span class="json-string">' + string + '</span>';
+          } else if (number) {
+            return '<span class="json-number">' + number + '</span>';
+          } else if (boolean) {
+            return '<span class="json-boolean">' + boolean + '</span>';
+          } else if (nullValue) {
+            return '<span class="json-null">' + nullValue + '</span>';
+          } else if (brace) {
+            return '<span class="json-brace">' + brace + '</span>';
+          } else if (bracket) {
+            return '<span class="json-bracket">' + bracket + '</span>';
+          } else if (comma) {
+            return '<span class="json-comma">,</span>';
+          }
+          return match;
+        }
+      );
+    }
+
     monitor.createTableDisplay = function(method, url, params, _originalPre, _originalMethodCell) {
       const container = document.createElement('div');
       container.className = 'parsed-request-container';
@@ -155,18 +185,20 @@ export function urlBlockParser() {
       
       const objectPre = document.createElement('pre');
       objectPre.style.cssText = `
-        background: white;
+        background: #f8f9fa;
         border: 1px solid #dee2e6;
-        border-radius: 4px;
-        padding: 16px;
+        border-radius: 6px;
+        padding: 20px;
         margin: 0;
-        font-family: 'Monaco', 'Consolas', 'Courier New', monospace;
-        font-size: 12px;
-        line-height: 1.4;
+        font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
+        font-size: 13px;
+        line-height: 1.5;
         color: #495057;
         overflow-x: auto;
         white-space: pre-wrap;
         word-break: break-word;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        position: relative;
       `;
 
       // Create formatted object string
@@ -178,19 +210,52 @@ export function urlBlockParser() {
         searchParams: params || {}
       };
 
-      objectPre.textContent = JSON.stringify(objectData, null, 2);
+      // Create syntax highlighted JSON
+      const jsonString = JSON.stringify(objectData, null, 2);
+      objectPre.innerHTML = monitor.syntaxHighlightJSON(jsonString);
       objectContainer.appendChild(objectPre);
 
       // View state management
       let currentView = 'table'; // 'table' or 'json'
+      
+      // Add JSON syntax highlighting styles only once
+      if (!document.getElementById('stape-json-styles')) {
         const style = document.createElement('style');
-        style.id = 'gtm-debug-card-style';
+        style.id = 'stape-json-styles';
         style.textContent = `
-          .gtm-debug-card {
-            display: block!important;
+          .json-key {
+            color: #e91e63 !important;
+            font-weight: bold !important;
+          }
+          .json-string {
+            color: #4caf50 !important;
+          }
+          .json-number {
+            color: #ff9800 !important;
+            font-weight: 500 !important;
+          }
+          .json-boolean {
+            color: #2196f3 !important;
+            font-weight: bold !important;
+          }
+          .json-null {
+            color: #9c27b0 !important;
+            font-weight: bold !important;
+          }
+          .json-brace {
+            color: #607d8b !important;
+            font-weight: bold !important;
+          }
+          .json-bracket {
+            color: #607d8b !important;
+            font-weight: bold !important;
+          }
+          .json-comma {
+            color: #757575 !important;
           }
         `;
         document.head.appendChild(style);
+      }
       // Copy functionality - always as JSON
       const copyToClipboard = () => {
         const objectData = {
