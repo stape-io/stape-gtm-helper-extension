@@ -1,5 +1,6 @@
 export function urlBlockParser() {
   console.log("STAPE GTM HELPER: Starting URL Blocks Parser")
+  window.__stape_extension = window.__stape_extension = {};
   function HTTPUrlDetailsMonitor() {
     const monitor = {
       observer: null,
@@ -89,7 +90,14 @@ export function urlBlockParser() {
       header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
       
       const methodSpan = document.createElement('span');
-      methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${monitor.getHostname(url)}${url.split('?')[0]}`;
+
+      let parsedUrl;
+      if(url.startsWith('http')){  // Fixed: startsWith instead of startWith, and 'http' instead of 'hhttp'
+          parsedUrl = url.replace(/^https?:\/\//, '').split('?')[0];
+      } else {
+          parsedUrl = document.location.hostname + url.replace(/^https?:\/\//, '').split('?')[0];
+      }
+      methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${parsedUrl}`;
       methodSpan.style.cssText = 'font-weight: bold; color: #495057; display: flex; align-items: center;';
       
       const buttonGroup = document.createElement('div');
@@ -465,8 +473,7 @@ export function urlBlockParser() {
         }
       });
 
-      monitor.observer.observe(document.body, { childList: true, subtree: true });
-      console.log('STAPE-IO HELPER: URL Block Parser');
+      monitor.observer.observe(document.body, { childList: true, subtree: true });      
     };
 
     // Stop monitoring and restore all components
@@ -527,9 +534,9 @@ export function urlBlockParser() {
   }
 
   // Initialize and start
-  const httpUrlMonitor = HTTPUrlDetailsMonitor();
+  window.__stape_extension.urlBlocksParser = HTTPUrlDetailsMonitor();
 
-  httpUrlMonitor.onNewHttpUrlDetails((components) => {
+  window.__stape_extension.urlBlocksParser.onNewHttpUrlDetails((components) => {
     console.log(`Enhanced ${components.length} HTTP request(s) with table view`);
     components.forEach((info, index) => {
       const paramCount = info.params ? Object.keys(info.params).length : 0;
@@ -539,9 +546,6 @@ export function urlBlockParser() {
 
   // Auto-start the monitor
   setTimeout(() => {
-    httpUrlMonitor.start();
+      window.__stape_extension.urlBlocksParser.start();
   }, 500);
-
-  // Make it globally available for debugging
-  window.httpUrlMonitor = httpUrlMonitor;
 }

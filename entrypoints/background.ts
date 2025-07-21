@@ -1,6 +1,9 @@
 import { onMessage } from "webext-bridge/background";
 import { urlBlockParser } from "../scripts/urlBlockParser.js";
-
+import { tagTypeColoring } from "../scripts/tagTypeColoring.js";
+import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
+import { consentStatusMonitor } from "../scripts/consentStatusMonitor.js";
+import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 // GTM environment detection rules
 const GTM_RULES = {
   GTMUI: /^https:\/\/tagmanager\.google\.com/,
@@ -11,6 +14,7 @@ const GTM_RULES = {
 export default defineBackground(() => {
 
   const tabStatus = new Map();
+  const injectedTabs = new Set();
 
   function detectGTMEnvironment(url: string) {
     if (GTM_RULES.GTMUI.test(url)) return 'GTMUI';
@@ -31,40 +35,50 @@ export default defineBackground(() => {
 
   browser.webNavigation.onDOMContentLoaded.addListener(async (details) => {
     
+    // This is where the decide to inject the code     
     if (details.parentFrameId === -1 && details.frameId === 0) {
-      console.log("NAVIGATING INJECT IN", details)
       const isGTMEnv = tabStatus.get(details.tabId);
+
       if (isGTMEnv) {
+        // TO-DO Inject only when Enabled. Quitar el autoload y hace el init de manera manual
         if (isGTMEnv?.environment === "GTMTASS") {
-          await injectMonitorToTab(details.tabId, isGTMEnv.environment);
+          await injectScriptToTab(details.tabId, urlBlockParser);
+          await injectScriptToTab(details.tabId, tagTypeColoring);
+          await injectScriptToTab(details.tabId, tagStatusColoring);
+          await injectScriptToTab(details.tabId, consentStatusMonitor);
+          await injectScriptToTab(details.tabId, showStapeContainerId);
         }
+        if (isGTMEnv?.environment === "GTMTA") {
+          await injectScriptToTab(details.tabId, tagTypeColoring);
+          await injectScriptToTab(details.tabId, tagStatusColoring);
+          await injectScriptToTab(details.tabId, consentStatusMonitor);
+        }                
       }
     }
   });
 
   // Inject monitor function
-  async function injectMonitorToTab(tabId: number, environment: string) {
+  async function injectScriptToTab(tabId: number, scriptFunc: Function) {
     try {
-      console.log(`Injecting HTTP monitor for ${environment} on tab ${tabId}`);
-
-      const scriptOptions: browser.scripting.ScriptInjection = {
-        target: { tabId },
-        func: urlBlockParser
-      };
-
       try {
         await browser.scripting.executeScript({
-          ...scriptOptions,
+          target: { tabId },
+          func: scriptFunc,
           injectImmediately: true,
           world: 'MAIN'
         });
       } catch (error) {
         // Fallback for Firefox
-        console.log('Falling back to basic injection');
-        await browser.scripting.executeScript(scriptOptions);
+        console.log('Falling back to basic injection for urlBlockParser');
+        await browser.scripting.executeScript({
+          target: { tabId },
+          func: scriptFunc
+        });
       }
+
+
     } catch (error) {
-      console.error(`Failed to inject monitor on tab ${tabId}:`, error);
+      console.log(`STAPE:ERROR Failed to inject monitor on tab ${tabId}:`, error);
     }
   }
 
@@ -74,7 +88,6 @@ export default defineBackground(() => {
 
       const environment = detectGTMEnvironment(details.url);
       if (environment) {
-        console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
         tabStatus.set(details.tabId, { environment, url: details.url });
       } else {
         if (details.responseHeaders) {
@@ -89,7 +102,6 @@ export default defineBackground(() => {
           );
 
           if (hasGTMCookies) {
-            console.log(`GTM debug cookies detected (GTMTASS) on tab ${details.tabId}`);
             tabStatus.set(details.tabId, { environment: 'GTMTASS', url: details.url });
           } else {
             tabStatus.delete(details.tabId);
@@ -107,9 +119,11 @@ export default defineBackground(() => {
     if (tabStatus.has(tabId)) {
       console.log(`Tab ${tabId} closed, removing from tracking`);
       tabStatus.delete(tabId);
+      injectedTabs.delete(tabId);
     }
   });
 
+  // This is used to pass the current tabs status to the popup
   onMessage("GET_CURRENT_TAB_STATUS", () => {
     return browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
       if (tabs[0]) {

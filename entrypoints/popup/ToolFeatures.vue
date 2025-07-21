@@ -78,21 +78,21 @@ const features = ref([
     id: 'url-blocks-formatter',
     name: 'URLs Formatter Mode',
     description: 'Pretty Prints Requests URLs',
-    environments: ["GTMUI","GTMTASS"],
+    environments: ["GTMTASS"],
     enabled: true
   },
  {
     id: 'tags-state-coloring',
     name: 'Tags Status Coloring',
     description: 'Highlight Tags By State',
-    environments: ["GTMTASS","GTMTASS"],
+    environments: ["GTMTA","GTMTASS"],
     enabled: true
   },
    {
     id: 'tags-type-coloring',
     name: 'Tags Type Coloring',
     description: 'Highlight Tags By Type',
-    environments: ["GTMTASS","GTMTASS"],
+    environments: ["GTMTA","GTMTASS"],
     enabled: true
   }      
 ])
