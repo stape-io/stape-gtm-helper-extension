@@ -90,7 +90,14 @@ export function urlBlockParser() {
       header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
       
       const methodSpan = document.createElement('span');
-      methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${monitor.getHostname(url)}${url.split('?')[0]}`;
+
+      let parsedUrl;
+      if(url.startsWith('http')){  // Fixed: startsWith instead of startWith, and 'http' instead of 'hhttp'
+          parsedUrl = url.replace(/^https?:\/\//, '').split('?')[0];
+      } else {
+          parsedUrl = document.location.hostname + url.replace(/^https?:\/\//, '').split('?')[0];
+      }
+      methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${parsedUrl}`;
       methodSpan.style.cssText = 'font-weight: bold; color: #495057; display: flex; align-items: center;';
       
       const buttonGroup = document.createElement('div');
