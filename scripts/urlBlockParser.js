@@ -1,5 +1,6 @@
 export function urlBlockParser() {
   console.log("STAPE GTM HELPER: Starting URL Blocks Parser")
+  window.__stape_extension = window.__stape_extension = {};
   function HTTPUrlDetailsMonitor() {
     const monitor = {
       observer: null,
@@ -465,8 +466,7 @@ export function urlBlockParser() {
         }
       });
 
-      monitor.observer.observe(document.body, { childList: true, subtree: true });
-      console.log('STAPE-IO HELPER: URL Block Parser');
+      monitor.observer.observe(document.body, { childList: true, subtree: true });      
     };
 
     // Stop monitoring and restore all components
@@ -527,9 +527,9 @@ export function urlBlockParser() {
   }
 
   // Initialize and start
-  const httpUrlMonitor = HTTPUrlDetailsMonitor();
+  window.__stape_extension.urlBlocksParser = HTTPUrlDetailsMonitor();
 
-  httpUrlMonitor.onNewHttpUrlDetails((components) => {
+  window.__stape_extension.urlBlocksParser.onNewHttpUrlDetails((components) => {
     console.log(`Enhanced ${components.length} HTTP request(s) with table view`);
     components.forEach((info, index) => {
       const paramCount = info.params ? Object.keys(info.params).length : 0;
@@ -539,9 +539,6 @@ export function urlBlockParser() {
 
   // Auto-start the monitor
   setTimeout(() => {
-    httpUrlMonitor.start();
+      window.__stape_extension.urlBlocksParser.start();
   }, 500);
-
-  // Make it globally available for debugging
-  window.httpUrlMonitor = httpUrlMonitor;
 }

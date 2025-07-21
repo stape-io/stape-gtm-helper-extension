@@ -112,6 +112,7 @@ const isTransitioning = ref(false)
 const getCurrentTabStatus = async () => {
   try {
     const status = await sendMessage("GET_CURRENT_TAB_STATUS", {}, "background");
+    console.log("STATE", status)
     gtmStatus.value = status;
   } catch (error) {
     gtmStatus.value = null; 
