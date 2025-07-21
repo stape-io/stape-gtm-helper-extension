@@ -56,7 +56,7 @@ export function showStapeContainerId() {
         } catch (e) {
           // Only log errors for non-empty responses to avoid noise
           if (responseText && responseText.trim() !== '') {
-            console.log("ERROR parsing JSON:", this._url, e, "Response:", responseText.substring(0, 100));
+            //console.log("ERROR parsing JSON:", this._url, e, "Response:", responseText.substring(0, 100));
           }
         }
       }

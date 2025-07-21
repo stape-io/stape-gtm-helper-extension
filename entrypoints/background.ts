@@ -36,31 +36,28 @@ export default defineBackground(() => {
     // This is where the decide to inject the code     
     if (details.parentFrameId === -1 && details.frameId === 0) {
       const isGTMEnv = tabStatus.get(details.tabId);
-      console.log("SHOUD I INJECT", isGTMEnv)
 
       if (isGTMEnv) {
+        // TO-DO Inject only when Enabled. Quitar el autoload y hace el init de manera manual
         if (isGTMEnv?.environment === "GTMTASS") {
-          await injectMonitorToTab(details.tabId, isGTMEnv.environment);
-          injectedTabs.add(details.tabId);
+          await injectScriptToTab(details.tabId, urlBlockParser);
+          await injectScriptToTab(details.tabId, tagTypeColoring);
+          await injectScriptToTab(details.tabId, showStapeContainerId);
         }
         if (isGTMEnv?.environment === "GTMTA") {
-          await injectMonitorToTab(details.tabId, isGTMEnv.environment);
-          injectedTabs.add(details.tabId);
-        }
-                
+          await injectScriptToTab(details.tabId, tagTypeColoring);
+        }                
       }
     }
   });
 
   // Inject monitor function
-  async function injectMonitorToTab(tabId: number, environment: string) {
+  async function injectScriptToTab(tabId: number, scriptFunc: Function) {
     try {
-      console.log(`Injecting HTTP monitor for ${environment} on tab ${tabId}`);
-
       try {
         await browser.scripting.executeScript({
           target: { tabId },
-          func: urlBlockParser,
+          func: scriptFunc,
           injectImmediately: true,
           world: 'MAIN'
         });
@@ -69,41 +66,10 @@ export default defineBackground(() => {
         console.log('Falling back to basic injection for urlBlockParser');
         await browser.scripting.executeScript({
           target: { tabId },
-          func: urlBlockParser
+          func: scriptFunc
         });
       }
 
-      try {
-        await browser.scripting.executeScript({
-          target: { tabId },
-          func: tagTypeColoring,
-          injectImmediately: true,
-          world: 'MAIN'
-        });
-      } catch (error) {
-        // Fallback for Firefox
-        console.log('Falling back to basic injection for tagTypeColoring');
-        await browser.scripting.executeScript({
-          target: { tabId },
-          func: tagTypeColoring
-        });
-      }
-
-      try {
-        await browser.scripting.executeScript({
-          target: { tabId },
-          func: showStapeContainerId,
-          injectImmediately: true,
-          world: 'MAIN'
-        });
-      } catch (error) {
-        // Fallback for Firefox
-        console.log('Falling back to basic injection for showStapeContainerId');
-        await browser.scripting.executeScript({
-          target: { tabId },
-          func: showStapeContainerId
-        });
-      }
 
     } catch (error) {
       console.error(`Failed to inject monitor on tab ${tabId}:`, error);
