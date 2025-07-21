@@ -61,7 +61,8 @@ export default defineBackground(() => {
         }                
       }
     }
-  });for th
+  });
+
   // Inject monitor function
   async function injectScriptToTab(tabId: number, scriptFunc: Function) {
     try {
