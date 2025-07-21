@@ -1,6 +1,7 @@
 import { onMessage } from "webext-bridge/background";
 import { urlBlockParser } from "../scripts/urlBlockParser.js";
 import { tagTypeColoring } from "../scripts/tagTypeColoring.js";
+import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
 import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 // GTM environment detection rules
 const GTM_RULES = {
@@ -42,10 +43,13 @@ export default defineBackground(() => {
         if (isGTMEnv?.environment === "GTMTASS") {
           await injectScriptToTab(details.tabId, urlBlockParser);
           await injectScriptToTab(details.tabId, tagTypeColoring);
+          await injectScriptToTab(details.tabId, tagStatusColoring);
           await injectScriptToTab(details.tabId, showStapeContainerId);
         }
         if (isGTMEnv?.environment === "GTMTA") {
           await injectScriptToTab(details.tabId, tagTypeColoring);
+          console.log("INEDCT tagStatusColoring");
+          await injectScriptToTab(details.tabId, tagStatusColoring);
         }                
       }
     }
@@ -72,7 +76,7 @@ export default defineBackground(() => {
 
 
     } catch (error) {
-      console.error(`Failed to inject monitor on tab ${tabId}:`, error);
+      console.log(`STAPE:ERROR Failed to inject monitor on tab ${tabId}:`, error);
     }
   }
 
@@ -82,7 +86,6 @@ export default defineBackground(() => {
 
       const environment = detectGTMEnvironment(details.url);
       if (environment) {
-        console.log(`GTM environment detected: ${environment} on tab ${details.tabId}`);
         tabStatus.set(details.tabId, { environment, url: details.url });
       } else {
         if (details.responseHeaders) {
@@ -97,7 +100,6 @@ export default defineBackground(() => {
           );
 
           if (hasGTMCookies) {
-            console.log(`GTM debug cookies detected (GTMTASS) on tab ${details.tabId}`);
             tabStatus.set(details.tabId, { environment: 'GTMTASS', url: details.url });
           } else {
             tabStatus.delete(details.tabId);
