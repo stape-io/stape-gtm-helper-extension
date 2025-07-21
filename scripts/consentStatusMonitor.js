@@ -131,14 +131,14 @@ export function consentStatusMonitor() {
         return `
           <tr class="gtm-debug-table-row gtm-debug-consent-table-row">
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">${type}</td>
-            <td class="gtm-debug-table-cell gtm-debug-consent-table-cell" data-ng-if="!ctrl.isContainerConsentConfigEnabled">
+            <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
               <div class="consent-value-cell">
-                <div data-ng-class="{'consent granted': ctrl.getConsentState(consent.consentEntry.default) === ctrl.ConsentState.GRANTED, 'consent denied': ctrl.getConsentState(consent.consentEntry.default) === ctrl.ConsentState.DENIED}" class="consent ${statusClass}">${statusDisplay}</div>
+                <div class="consent ${statusClass}">${statusDisplay}</div>
               </div>
             </td>
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
               <div class="consent-value-cell">
-                <div data-ng-class="{'consent granted': ctrl.getConsentState(consent.consentEntry.update) === ctrl.ConsentState.GRANTED, 'consent denied': ctrl.getConsentState(consent.consentEntry.update) === ctrl.ConsentState.DENIED}" class="consent ${statusClass}">${statusDisplay}</div>
+                <div class="consent ${statusClass}">${statusDisplay}</div>
               </div>
             </td>
           </tr>`;
@@ -147,11 +147,11 @@ export function consentStatusMonitor() {
       console.log('Consent Monitor - Generated table rows:', tableRows);
       
       const consentTableHTML = `
-        <table class="gtm-debug-consent-table dma-consent-table" data-ng-if="ctrl.isUpdatedConsentTabEnabled">
+        <table class="gtm-debug-consent-table dma-consent-table" style="margin-bottom:1em ">
           <thead>
             <tr class="gtm-debug-table-row">
-              <th class="gtm-debug-table-header-cell">Type</th>
-              <th class="gtm-debug-table-header-cell" data-ng-if="!ctrl.isContainerConsentConfigEnabled">On-page Default</th>
+              <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://stape.io/favicon.ico"></th>
+              <th class="gtm-debug-table-header-cell">On-page Default</th>
               <th class="gtm-debug-table-header-cell">On-page Update</th>
             </tr>
           </thead>
