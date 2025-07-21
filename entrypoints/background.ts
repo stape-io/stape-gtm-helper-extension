@@ -2,6 +2,7 @@ import { onMessage } from "webext-bridge/background";
 import { urlBlockParser } from "../scripts/urlBlockParser.js";
 import { tagTypeColoring } from "../scripts/tagTypeColoring.js";
 import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
+import { consentStatusMonitor } from "../scripts/consentStatusMonitor.js";
 import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 // GTM environment detection rules
 const GTM_RULES = {
@@ -44,12 +45,13 @@ export default defineBackground(() => {
           await injectScriptToTab(details.tabId, urlBlockParser);
           await injectScriptToTab(details.tabId, tagTypeColoring);
           await injectScriptToTab(details.tabId, tagStatusColoring);
+          await injectScriptToTab(details.tabId, consentStatusMonitor);
           await injectScriptToTab(details.tabId, showStapeContainerId);
         }
         if (isGTMEnv?.environment === "GTMTA") {
           await injectScriptToTab(details.tabId, tagTypeColoring);
-          console.log("INEDCT tagStatusColoring");
           await injectScriptToTab(details.tabId, tagStatusColoring);
+          await injectScriptToTab(details.tabId, consentStatusMonitor);
         }                
       }
     }
