@@ -4,6 +4,7 @@ import { tagTypeColoring } from "../scripts/tagTypeColoring.js";
 import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
 import { consentStatusMonitor } from "../scripts/consentStatusMonitor.js";
 import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
+import { previewUIFilters } from "../scripts/previewUIFilters.js";
 // GTM environment detection rules
 const GTM_RULES = {
   GTMUI: /^https:\/\/tagmanager\.google\.com/,
@@ -47,16 +48,20 @@ export default defineBackground(() => {
           await injectScriptToTab(details.tabId, tagStatusColoring);
           await injectScriptToTab(details.tabId, consentStatusMonitor);
           await injectScriptToTab(details.tabId, showStapeContainerId);
+          console.log("ASDASD", previewUIFilters)
+          await injectScriptToTab(details.tabId, previewUIFilters);
         }
         if (isGTMEnv?.environment === "GTMTA") {
           await injectScriptToTab(details.tabId, tagTypeColoring);
           await injectScriptToTab(details.tabId, tagStatusColoring);
           await injectScriptToTab(details.tabId, consentStatusMonitor);
+          console.log("ASDASD", previewUIFilters)
+          await injectScriptToTab(details.tabId, previewUIFilters);
+
         }                
       }
     }
-  });
-
+  });for th
   // Inject monitor function
   async function injectScriptToTab(tabId: number, scriptFunc: Function) {
     try {
