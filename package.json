@@ -2,7 +2,7 @@
   "name": "stape-gtm-helper",
   "description": "Enhance your Google Tag Manager debugging",
   "private": true,
-  "version": "3.0.0-beta.5,"
+  "version": "3.0.0-beta.5",
   "type": "module",
   "scripts": {
     "dev": "wxt",
@@ -27,13 +27,13 @@
   },
   "devDependencies": {
     "@wxt-dev/module-vue": "^1.0.2",
-    "@typescript-eslint/eslint-plugin": "^6.0.0",
-    "@typescript-eslint/parser": "^6.0.0",
-    "eslint": "^8.45.0",
-    "eslint-plugin-vue": "^9.15.0",
-    "prettier": "^3.0.0",
-    "typescript": "5.6.3",
-    "vue-tsc": "^2.2.12",
+    "@typescript-eslint/eslint-plugin": "^8.37.0",
+    "@typescript-eslint/parser": "^8.37.0",
+    "eslint": "^9.31.0",
+    "eslint-plugin-vue": "^10.3.0",
+    "prettier": "^3.6.2",
+    "typescript": "5.8.3",
+    "vue-tsc": "^3.0.3",
     "wxt": "^0.20.7"
   }
 }
