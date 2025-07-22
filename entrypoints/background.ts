@@ -150,7 +150,7 @@ export default defineBackground(() => {
       if (tabs[0]) {
         const status = tabStatus.get(tabs[0].id);
         return status; // Send status back
-      }each ti
+      }
       return null; // No active tab
     });
   });
