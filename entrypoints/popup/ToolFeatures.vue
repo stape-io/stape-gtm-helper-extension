@@ -69,9 +69,9 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
 import { storage } from '@wxt-dev/storage';
-import { onMessage } from 'webext-bridge/background';
+import { sendMessage } from 'webext-bridge/popup';
 
 
 
@@ -80,11 +80,34 @@ const compactMode = ref(false)
 
 const features = ref([])
 
-const toggleFeature = (featureId) => {
+const toggleFeature = async (featureId) => {
   const feature = features.value.find(f => f.id === featureId)
   if (feature) {
     feature.enabled = !feature.enabled
     console.log(`Feature ${feature.name} is now ${feature.enabled ? 'enabled' : 'disabled'}`)
+    
+    // Save updated settings to storage
+    try {
+      const settings = await storage.getMeta('local:settingsDEV')
+      settings.features = features.value
+      await storage.setMeta('local:settingsDEV', settings)
+      console.log('Settings saved to storage')
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+    }
+    
+    // Send command to content script
+    if (feature.apiCommand) {
+      try {
+        const action = feature.enabled ? 'start' : 'stop'
+        await sendMessage('EXECUTE_SCRIPT', {
+          command: feature.apiCommand,
+          action: action
+        }, 'background')
+      } catch (error) {
+        console.error('Failed to send command:', error)
+      }
+    }
   }
 }
 

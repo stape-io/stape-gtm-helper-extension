@@ -20,9 +20,11 @@ export default defineBackground(() => {
     const settings = await storage.getMeta('local:settingsDEV')
     if(!settings.features){
       settings.features = [
-        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2}
+        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
+        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagTypeColoring'},
+        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagStatusColoring'},
+        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Highlights the current consent mode on SS Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
+        {id: 'preview-ui-filtering', name: 'Entities Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'}                        
       ];      
       await storage.setMeta('local:settingsDEV', settings)
     }    
@@ -63,14 +65,12 @@ export default defineBackground(() => {
           await injectScriptToTab(details.tabId, tagStatusColoring);
           await injectScriptToTab(details.tabId, consentStatusMonitor);
           await injectScriptToTab(details.tabId, showStapeContainerId);
-          console.log("ASDASD", previewUIFilters)
           await injectScriptToTab(details.tabId, previewUIFilters);
         }
         if (isGTMEnv?.environment === "GTMTA") {
           await injectScriptToTab(details.tabId, tagTypeColoring);
           await injectScriptToTab(details.tabId, tagStatusColoring);
           await injectScriptToTab(details.tabId, consentStatusMonitor);
-          console.log("ASDASD", previewUIFilters)
           await injectScriptToTab(details.tabId, previewUIFilters);
 
         }                
@@ -150,9 +150,35 @@ export default defineBackground(() => {
       if (tabs[0]) {
         const status = tabStatus.get(tabs[0].id);
         return status; // Send status back
-      }
+      }each ti
       return null; // No active tab
     });
   });
+
+  onMessage("EXECUTE_SCRIPT", (details) => {
+    return browser.tabs.query({ active: true, currentWindow: true }).then(async (tabs) => {
+      if (tabs[0]) {
+        const { command, action } = details.data;
+        console.log("TOGGLE FEATURE", command, action);        
+        try {
+          await browser.scripting.executeScript({
+            target: { tabId: tabs[0].id },
+            func: (apiCommand, actionType) => {
+              if (window.__stape_extension && window.__stape_extension[apiCommand]) {
+                window.__stape_extension[apiCommand][actionType]();
+              }
+            },
+            args: [command, action],
+            world: 'MAIN'
+          });
+          return { success: true };
+        } catch (error) {
+          console.error('Failed to execute script command:', error);
+          return { success: false, error: error.message };
+        }
+      }
+      return { success: false, error: 'No active tab' };
+    });
+  });  
 
 });
