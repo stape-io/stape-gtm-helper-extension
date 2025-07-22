@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.11",
+    "@wxt-dev/storage": "^1.1.1",
     "tailwindcss": "^4.1.11",
     "vue": "^3.5.17",
     "webext-bridge": "^6.0.1"
