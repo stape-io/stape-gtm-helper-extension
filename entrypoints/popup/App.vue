@@ -180,10 +180,9 @@ const handleCornerClick = (cornerIndex) => {
 
 const resetSettings = async () => {
   try {
-    storage.remove
-    await storage.removeMeta('local:settingsDEV')
-    alert('Settings have been reset! Extension will reload now.')
-    browser.runtime.reload()
+    await storage.removeMeta('local:settingsDEV');
+    alert('Settings have been reset! Extension will reload now.');
+    browser.runtime.reload();
 
   } catch (error) {
     console.error('Failed to reset settings:', error)
