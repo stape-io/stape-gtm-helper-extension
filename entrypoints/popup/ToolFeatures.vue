@@ -49,7 +49,7 @@
               <p v-if="!compactMode" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ feature.description }}</p>
             </transition>
           </div>
-          
+
           <!-- Toggle switch -->
           <div class="flex-shrink-0">
             <label class="relative  items-center cursor-pointer">
@@ -74,27 +74,9 @@ import { ref } from 'vue'
 const compactMode = ref(false)
 
 const features = ref([
-  {
-    id: 'url-blocks-formatter',
-    name: 'URLs Formatter Mode',
-    description: 'Pretty Prints Requests URLs',
-    environments: ["GTMTASS"],
-    enabled: true
-  },
- {
-    id: 'tags-state-coloring',
-    name: 'Tags Status Coloring',
-    description: 'Highlight Tags By State',
-    environments: ["GTMTA","GTMTASS"],
-    enabled: true
-  },
-   {
-    id: 'tags-type-coloring',
-    name: 'Tags Type Coloring',
-    description: 'Highlight Tags By Type',
-    environments: ["GTMTA","GTMTASS"],
-    enabled: true
-  }      
+  {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0},
+  {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1},
+  {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2}
 ])
 
 const toggleFeature = (featureId) => {
