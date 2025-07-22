@@ -49,7 +49,7 @@
               <p v-if="!compactMode" class="text-xs text-gray-500 mt-1 leading-relaxed">{{ feature.description }}</p>
             </transition>
           </div>
-          
+
           <!-- Toggle switch -->
           <div class="flex-shrink-0">
             <label class="relative  items-center cursor-pointer">
@@ -69,39 +69,45 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
+import { ref, onMounted } from 'vue'
+import { storage } from '@wxt-dev/storage';
+import { sendMessage } from 'webext-bridge/popup';
+
+
+
 
 const compactMode = ref(false)
 
-const features = ref([
-  {
-    id: 'url-blocks-formatter',
-    name: 'URLs Formatter Mode',
-    description: 'Pretty Prints Requests URLs',
-    environments: ["GTMTASS"],
-    enabled: true
-  },
- {
-    id: 'tags-state-coloring',
-    name: 'Tags Status Coloring',
-    description: 'Highlight Tags By State',
-    environments: ["GTMTA","GTMTASS"],
-    enabled: true
-  },
-   {
-    id: 'tags-type-coloring',
-    name: 'Tags Type Coloring',
-    description: 'Highlight Tags By Type',
-    environments: ["GTMTA","GTMTASS"],
-    enabled: true
-  }      
-])
+const features = ref([])
 
-const toggleFeature = (featureId) => {
+const toggleFeature = async (featureId) => {
   const feature = features.value.find(f => f.id === featureId)
   if (feature) {
     feature.enabled = !feature.enabled
     console.log(`Feature ${feature.name} is now ${feature.enabled ? 'enabled' : 'disabled'}`)
+    
+    // Save updated settings to storage
+    try {
+      const settings = await storage.getMeta('local:settingsDEV')
+      settings.features = features.value
+      await storage.setMeta('local:settingsDEV', settings)
+      console.log('Settings saved to storage')
+    } catch (error) {
+      console.error('Failed to save settings:', error)
+    }
+    
+    // Send command to content script
+    if (feature.apiCommand) {
+      try {
+        const action = feature.enabled ? 'start' : 'stop'
+        await sendMessage('EXECUTE_SCRIPT', {
+          command: feature.apiCommand,
+          action: action
+        }, 'background')
+      } catch (error) {
+        console.error('Failed to send command:', error)
+      }
+    }
   }
 }
 
@@ -122,6 +128,10 @@ const getEnvironmentBadgeClass = (env) => {
       return 'bg-gray-50 text-gray-700 border-gray-200'
   }
 }
+onMounted(async()=>{
+  const settings = await storage.getMeta('local:settingsDEV')
+  features.value = settings.features;
+})
 </script>
 
 <style scoped>

@@ -1,5 +1,11 @@
 <template>
-  <div class="bg-gray-50 p-4 w-96 min-w-96 max-w-96">
+  <div class="bg-gray-50 p-4 w-96 min-w-96 max-w-96 relative">
+    <!-- Secret corner click areas -->
+    <div class="absolute top-0 left-0 w-8 h-8 z-50" @click="handleCornerClick(1)" title=""></div>
+    <div class="absolute top-0 right-0 w-8 h-8 z-50" @click="handleCornerClick(2)" title=""></div>
+    <div class="absolute bottom-0 left-0 w-8 h-8 z-50" @click="handleCornerClick(3)" title=""></div>
+    <div class="absolute bottom-0 right-0 w-8 h-8 z-50" @click="handleCornerClick(4)" title=""></div>
+    
     <div class="max-w-2xl mx-auto">
       <!-- Header -->
       <div class="mb-4">
@@ -71,7 +77,7 @@
           </div>
           
           <div class="text-xs text-gray-500">
-            Version 3.0.0-beta5
+            Version {{ packageInfo.version }}
           </div>
         </div>
       </div>
@@ -101,6 +107,7 @@
 
 import { ref, onMounted } from 'vue'
 import { sendMessage } from "webext-bridge/popup";
+import { storage } from '@wxt-dev/storage';
 import ToolFeatures from './ToolFeatures.vue'
 import packageInfo from '../../package.json'
 
@@ -108,6 +115,11 @@ import packageInfo from '../../package.json'
 const gtmStatus = ref(null)
 const showNewContent = ref(false)
 const isTransitioning = ref(false)
+
+// Secret reset pattern (top-left, top-right, bottom-left, bottom-left, bottom-right)
+const resetSequence = [1, 2, 3, 3, 4]
+const clickSequence = ref([])
+const resetTimeout = ref(null)
 
 const getCurrentTabStatus = async () => {
   try {
@@ -131,6 +143,51 @@ onMounted(() => {
 
 const openFeatureRequest = () => {
   window.open('https://feature.stape.io', '_blank')
+}
+
+const handleCornerClick = (cornerIndex) => {
+  // Clear any existing timeout
+  if (resetTimeout.value) {
+    clearTimeout(resetTimeout.value)
+  }
+  
+  // Add corner to sequence
+  clickSequence.value.push(cornerIndex)
+  console.log('Corner clicked:', cornerIndex, 'Sequence:', clickSequence.value)
+  
+  // Check if sequence matches the reset pattern
+  const isSequenceCorrect = clickSequence.value.every((click, index) => 
+    click === resetSequence[index]
+  )
+  
+  if (!isSequenceCorrect) {
+    // Reset sequence if wrong
+    clickSequence.value = [cornerIndex]
+  }
+  
+  if (clickSequence.value.length === resetSequence.length && isSequenceCorrect) {
+    // Success! Reset settings
+    alert('🎉 Secret reset pattern completed! Settings will be reset.')
+    resetSettings()
+    clickSequence.value = []
+  }
+  
+  // Set timeout to reset sequence after 3 seconds of inactivity
+  resetTimeout.value = setTimeout(() => {
+    clickSequence.value = []
+  }, 3000)
+}
+
+const resetSettings = async () => {
+  try {
+    storage.remove
+    await storage.removeMeta('local:settingsDEV')
+    alert('Settings have been reset! Extension will reload now.')
+    browser.runtime.reload()
+
+  } catch (error) {
+    console.error('Failed to reset settings:', error)
+  }
 }
 </script>
 
