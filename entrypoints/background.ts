@@ -5,6 +5,9 @@ import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
 import { consentStatusMonitor } from "../scripts/consentStatusMonitor.js";
 import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 import { previewUIFilters } from "../scripts/previewUIFilters.js";
+import { storage } from '@wxt-dev/storage';
+
+
 // GTM environment detection rules
 const GTM_RULES = {
   GTMUI: /^https:\/\/tagmanager\.google\.com/,
@@ -13,6 +16,18 @@ const GTM_RULES = {
 };
 
 export default defineBackground(() => {
+  (async () => {
+    const settings = await storage.getMeta('local:settingsDEV')
+    if(!settings.features){
+      settings.features = [
+        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0},
+        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1},
+        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2}
+      ];      
+      await storage.setMeta('local:settingsDEV', settings)
+    }    
+  })();
+   
 
   const tabStatus = new Map();
   const injectedTabs = new Set();
@@ -35,7 +50,7 @@ export default defineBackground(() => {
   }
 
   browser.webNavigation.onDOMContentLoaded.addListener(async (details) => {
-    
+   
     // This is where the decide to inject the code     
     if (details.parentFrameId === -1 && details.frameId === 0) {
       const isGTMEnv = tabStatus.get(details.tabId);

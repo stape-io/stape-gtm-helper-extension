@@ -70,14 +70,15 @@
 
 <script setup>
 import { ref } from 'vue'
+import { storage } from '@wxt-dev/storage';
+import { onMessage } from 'webext-bridge/background';
+
+
+
 
 const compactMode = ref(false)
 
-const features = ref([
-  {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0},
-  {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1},
-  {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2}
-])
+const features = ref([])
 
 const toggleFeature = (featureId) => {
   const feature = features.value.find(f => f.id === featureId)
@@ -104,6 +105,10 @@ const getEnvironmentBadgeClass = (env) => {
       return 'bg-gray-50 text-gray-700 border-gray-200'
   }
 }
+onMounted(async()=>{
+  const settings = await storage.getMeta('local:settingsDEV')
+  features.value = settings.features;
+})
 </script>
 
 <style scoped>
