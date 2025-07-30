@@ -1,5 +1,5 @@
-export function previewUIFilters() {
-  console.log("STAPE GTM HELPER: Starting Preview UI Filters")
+export function previewUIFilters(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Preview UI Filters", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function PreviewUIFiltersMonitor() {
@@ -12,7 +12,7 @@ export function previewUIFilters() {
       currentTab: 'none',
       searchQuery: '',
       selectedFilters: [],
-      isCollapsed: false
+      isCollapsed: true
     };
 
     monitor.detectActiveTab = function() {
@@ -1137,8 +1137,11 @@ export function previewUIFilters() {
   // Initialize and start
   window.__stape_extension.previewUIFilters = PreviewUIFiltersMonitor();
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.previewUIFilters.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Preview UI Filters auto-starting (feature is enabled)');
+    window.__stape_extension.previewUIFilters.start();
+  } else {
+    console.log('STAPE: Preview UI Filters not auto-starting (feature is disabled)');
+  }
 }

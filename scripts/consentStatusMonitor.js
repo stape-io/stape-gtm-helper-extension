@@ -1,5 +1,5 @@
-export function consentStatusMonitor() {
-  console.log("STAPE GTM HELPER: Starting Consent Status Monitor")
+export function consentStatusMonitor(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Consent Status Monitor", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function ConsentStatusMonitor() {
@@ -270,8 +270,11 @@ export function consentStatusMonitor() {
     });
   });
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.consentStatusMonitor.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Consent Status Monitor auto-starting (feature is enabled)');
+    window.__stape_extension.consentStatusMonitor.start();
+  } else {
+    console.log('STAPE: Consent Status Monitor not auto-starting (feature is disabled)');
+  }
 }

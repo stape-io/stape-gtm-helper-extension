@@ -1,6 +1,6 @@
-export function urlBlockParser() {
-  console.log("STAPE GTM HELPER: Starting URL Blocks Parser")
-  window.__stape_extension = window.__stape_extension = {};
+export function urlBlockParser(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting URL Blocks Parser", { isEnabled })
+  window.__stape_extension = window.__stape_extension || {};
   function HTTPUrlDetailsMonitor() {
     const monitor = {
       observer: null,
@@ -544,8 +544,11 @@ export function urlBlockParser() {
     });
   });
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.urlBlocksParser.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: URL Block Parser auto-starting (feature is enabled)');
+    window.__stape_extension.urlBlocksParser.start();
+  } else {
+    console.log('STAPE: URL Block Parser not auto-starting (feature is disabled)');
+  }
 }

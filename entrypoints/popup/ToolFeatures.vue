@@ -76,7 +76,7 @@ import { sendMessage } from 'webext-bridge/popup';
 
 
 
-const compactMode = ref(false)
+const compactMode = ref(true)
 
 const features = ref([])
 

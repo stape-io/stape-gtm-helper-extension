@@ -1,5 +1,5 @@
-export function tagTypeColoring() {
-  console.log("STAPE GTM HELPER: Starting Tag Type Coloring")
+export function tagTypeColoring(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Tag Type Coloring", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function TagTypeColoringMonitor() {
@@ -9,9 +9,10 @@ export function tagTypeColoring() {
     const vendorMap = new Map([   
       [/Google Tag|Google Analytics|Google Analytics 4/i, { vendor: 'google', color: '#EEA849', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
       [/Data Tag|Stape/i, { vendor: 'stape', color: '#FF6D34', icon: 'https://cdn.stape.io/i/688a4bb90eaac838702555.ico' }],
-      [/Google Ads|Microsoft Ads|Floodlight|Conversion Linker/i, { vendor: 'google-ads', color: '#3CA55C', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
+      [/Google Ads|Floodlight|Conversion Linker/i, { vendor: 'google-ads', color: '#3CA55C', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
+      [/Microsoft Ads/i, { vendor: 'bing', color: '#3CA55C', icon: 'https://www.bing.com/favicon.ico?toWww=1&redig=A5077B0B51D042998466895B120457AE' }],      
       [/Pinterest/i, { vendor: 'pinterest', color: '#92140C', icon: 'https://cdn.stape.io/i/688a4bc0042a7060906944.png' }],
-      [/Facebook|Meta/i, { vendor: 'facebook', color: '#0072FF', icon: 'https://facebook.com/favicon.ico' }],
+      [/Facebook|Meta/i, { vendor: 'facebook', color: '#0072FF', icon: 'https://cdn.stape.io/i/688a4ebd43077257734273.ico' }],
       [/TikTok/i, { vendor: 'tiktok', color: '#333333', icon: 'https://cdn.stape.io/i/688a4bb53858e835102417.png' }],
       [/BigQuery/i, { vendor: 'bigquery', color: '#5086EC', icon: 'https://cdn.stape.io/i/688a4bca09d7a787895189.ico' }],
       [/LinkedIn/i, { vendor: 'linkedin', color: '#006699', icon: 'https://cdn.stape.io/i/688a4bcd4d8e5902639725.ico' }],
@@ -248,8 +249,11 @@ export function tagTypeColoring() {
     });
   });
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.tagTypeColoring.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Tag Type Coloring auto-starting (feature is enabled)');
+    window.__stape_extension.tagTypeColoring.start();
+  } else {
+    console.log('STAPE: Tag Type Coloring not auto-starting (feature is disabled)');
+  }
 }
