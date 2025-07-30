@@ -22,9 +22,9 @@ export default defineBackground(() => {
     if(!settings.features){
       settings.features = [
         {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
-        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Highlights the current consent mode on SS Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
+        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
+        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
+        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
         {id: 'preview-ui-filtering', name: 'Entities Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
         {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
       ];      
