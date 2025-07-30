@@ -547,6 +547,13 @@ export function previewUIFilters() {
         if (!container.contains(e.target)) {
           multiselectOptions.classList.remove('show');
           optionsVisible = false;
+          
+          // Also collapse the entire filter panel when clicking outside
+          if (!monitor.isCollapsed) {
+            monitor.isCollapsed = true;
+            toggle.classList.add('collapsed');
+            content.classList.add('collapsed');
+          }
         }
       });
     };
