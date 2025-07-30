@@ -7,16 +7,16 @@ export function tagTypeColoring() {
     
     // Map regex to vendor info with color and icon URL
     const vendorMap = new Map([   
-      [/Google Tag|Google Analytics|Google Analytics 4/i, { vendor: 'google', color: '#EEA849', icon: 'https://www.google.com/favicon.ico' }],
-      [/Data Tag|Stape/i, { vendor: 'stape', color: '#FF6D34', icon: 'https://stape.io/favicon.ico' }],
-      [/Google Ads|Microsoft Ads|Floodlight|Conversion Linker/i, { vendor: 'google-ads', color: '#3CA55C', icon: 'https://www.google.com/favicon.ico' }],
-      [/Pinterest/i, { vendor: 'pinterest', color: '#92140C', icon: 'https://pinterest.com/favicon.ico' }],
+      [/Google Tag|Google Analytics|Google Analytics 4/i, { vendor: 'google', color: '#EEA849', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
+      [/Data Tag|Stape/i, { vendor: 'stape', color: '#FF6D34', icon: 'https://cdn.stape.io/i/688a4bb90eaac838702555.ico' }],
+      [/Google Ads|Microsoft Ads|Floodlight|Conversion Linker/i, { vendor: 'google-ads', color: '#3CA55C', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
+      [/Pinterest/i, { vendor: 'pinterest', color: '#92140C', icon: 'https://cdn.stape.io/i/688a4bc0042a7060906944.png' }],
       [/Facebook|Meta/i, { vendor: 'facebook', color: '#0072FF', icon: 'https://facebook.com/favicon.ico' }],
-      [/TikTok/i, { vendor: 'tiktok', color: '#333333', icon: 'https://tiktok.com/favicon.ico' }],
-      [/BigQuery/i, { vendor: 'bigquery', color: '#5086EC', icon: 'https://cloud.google.com/favicon.ico' }],
-      [/LinkedIn/i, { vendor: 'linkedin', color: '#006699', icon: 'https://linkedin.com/favicon.ico' }],
-      [/Snapchat|Snap Pixel/i, { vendor: 'snapchat', color: '#FFD60A', icon: 'https://snapchat.com/favicon.ico' }],
-      [/Klaviyo/i, { vendor: 'klaviyo', color: '#1D1E20', icon: 'https://klaviyo.com/favicon.ico' }]
+      [/TikTok/i, { vendor: 'tiktok', color: '#333333', icon: 'https://cdn.stape.io/i/688a4bb53858e835102417.png' }],
+      [/BigQuery/i, { vendor: 'bigquery', color: '#5086EC', icon: 'https://cdn.stape.io/i/688a4bca09d7a787895189.ico' }],
+      [/LinkedIn/i, { vendor: 'linkedin', color: '#006699', icon: 'https://cdn.stape.io/i/688a4bcd4d8e5902639725.ico' }],
+      [/Snapchat|Snap Pixel/i, { vendor: 'snapchat', color: '#FFD60A', icon: 'https://cdn.stape.io/i/688a4bbcaf65a634350590.ico' }],
+      [/Klaviyo/i, { vendor: 'klaviyo', color: '#1D1E20', icon: 'https://cdn.stape.io/i/688a4bc3b2835223698495.png' }]
     ]);
 
     const monitor = {
