@@ -250,10 +250,13 @@ export function tagTypeColoring(isEnabled = true) {
   });
 
   // Auto-start based on enabled state
-  if (isEnabled) {
+  console.log('=============================================================');
+  console.log('STAPE: Tag Type Coloring checking isEnabled:', { isEnabled, type: typeof isEnabled, strict: isEnabled === true });
+  if (isEnabled === true) {
     console.log('STAPE: Tag Type Coloring auto-starting (feature is enabled)');
     window.__stape_extension.tagTypeColoring.start();
   } else {
     console.log('STAPE: Tag Type Coloring not auto-starting (feature is disabled)');
   }
+  console.log('=============================================================');
 }
