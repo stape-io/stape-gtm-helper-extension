@@ -81,19 +81,22 @@ const compactMode = ref(false)
 const features = ref([])
 
 const toggleFeature = async (featureId) => {
+  if (!Array.isArray(features.value)) {
+    return;
+  }
+  
   const feature = features.value.find(f => f.id === featureId)
+
   if (feature) {
     feature.enabled = !feature.enabled
-    console.log(`Feature ${feature.name} is now ${feature.enabled ? 'enabled' : 'disabled'}`)
     
     // Save updated settings to storage
     try {
       const settings = await storage.getMeta('local:settingsDEV')
-      settings.features = features.value
+      // Ensure we save a plain array, not a reactive reference
+      settings.features = JSON.parse(JSON.stringify(features.value))
       await storage.setMeta('local:settingsDEV', settings)
-      console.log('Settings saved to storage')
     } catch (error) {
-      console.error('Failed to save settings:', error)
     }
     
     // Send command to content script
@@ -129,8 +132,16 @@ const getEnvironmentBadgeClass = (env) => {
   }
 }
 onMounted(async()=>{
-  const settings = await storage.getMeta('local:settingsDEV')
-  features.value = settings.features;
+  try {
+    const settings = await storage.getMeta('local:settingsDEV')
+    const loadedFeatures = settings?.features || [];
+    // Ensure we have a proper array
+    features.value = Array.isArray(loadedFeatures) ? loadedFeatures : [];
+    console.log('Features loaded:', features.value);
+  } catch (error) {
+    console.error('Failed to load features from storage:', error);
+    features.value = [];
+  }
 })
 </script>
 
