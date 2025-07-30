@@ -5,6 +5,7 @@ import { tagStatusColoring } from "../scripts/tagStatusColoring.js";
 import { consentStatusMonitor } from "../scripts/consentStatusMonitor.js";
 import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 import { previewUIFilters } from "../scripts/previewUIFilters.js";
+import { jsonFormatter } from "../scripts/jsonFormatter.js";
 import { storage } from '@wxt-dev/storage';
 
 
@@ -21,10 +22,11 @@ export default defineBackground(() => {
     if(!settings.features){
       settings.features = [
         {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagTypeColoring'},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagStatusColoring'},
-        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Highlights the current consent mode on SS Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
-        {id: 'preview-ui-filtering', name: 'Entities Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'}                        
+        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
+        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
+        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
+        {id: 'preview-ui-filtering', name: 'Entities Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
+        {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
       ];      
       await storage.setMeta('local:settingsDEV', settings)
     }    
@@ -58,50 +60,91 @@ export default defineBackground(() => {
       const isGTMEnv = tabStatus.get(details.tabId);
 
       if (isGTMEnv) {
-        // TO-DO Inject only when Enabled. Quitar el autoload y hace el init de manera manual
-        if (isGTMEnv?.environment === "GTMTASS") {
-          await injectScriptToTab(details.tabId, urlBlockParser);
-          await injectScriptToTab(details.tabId, tagTypeColoring);
-          await injectScriptToTab(details.tabId, tagStatusColoring);
-          await injectScriptToTab(details.tabId, consentStatusMonitor);
-          await injectScriptToTab(details.tabId, showStapeContainerId);
-          await injectScriptToTab(details.tabId, previewUIFilters);
+        // Get current feature states from storage
+        let settings;
+        try {
+          settings = await storage.getMeta('local:settingsDEV');
+        } catch (error) {
+          console.log('STAPE: Error reading settings:', error);
+          settings = null;
         }
-        if (isGTMEnv?.environment === "GTMTA") {
-          await injectScriptToTab(details.tabId, tagTypeColoring);
-          await injectScriptToTab(details.tabId, tagStatusColoring);
-          await injectScriptToTab(details.tabId, consentStatusMonitor);
-          await injectScriptToTab(details.tabId, previewUIFilters);
+        
+        const featureStates = {};
+        
+        console.log('STAPE: Loading settings from storage:', settings);
+        
+        if (settings?.features && Array.isArray(settings.features)) {
+          settings.features.forEach(feature => {
+            featureStates[feature.apiCommand] = feature.enabled;
+            console.log(`STAPE: Feature ${feature.apiCommand} -> ${feature.enabled}`);
+          });
+        } else {
+          // Fallback: if no settings found, enable all features by default
+          console.log('STAPE: No settings found, using fallback enabled states');
+          featureStates.urlBlocksParser = true;
+          featureStates.tagStatusColoring = true;
+          featureStates.tagTypeColoring = true;
+          featureStates.consentStatusMonitor = true;
+          featureStates.previewUIFilters = true;
+          featureStates.jsonFormatterInline = true;
+        }
+        
+        console.log('STAPE: Final feature states:', featureStates);
 
+        // Create script function mapping
+        const scriptMapping = {
+          'urlBlocksParser': urlBlockParser,
+          'tagStatusColoring': tagStatusColoring,
+          'tagTypeColoring': tagTypeColoring,
+          'consentStatusMonitor': consentStatusMonitor,
+          'previewUIFilters': previewUIFilters,
+          'jsonFormatterInline': jsonFormatter
+        };
+
+        // Inject scripts based on feature configuration
+        if (settings?.features && Array.isArray(settings.features)) {
+          for (const feature of settings.features) {
+            if (feature.environments.includes(isGTMEnv.environment) && scriptMapping[feature.apiCommand]) {
+              await injectScript(details.tabId, scriptMapping[feature.apiCommand], featureStates[feature.apiCommand]);
+              console.log(`STAPE: Injected ${feature.apiCommand} for ${isGTMEnv.environment}`);
+            }
+          }
+        }
+
+        // Always inject showStapeContainerId for GTMTASS (not configurable)
+        if (isGTMEnv?.environment === "GTMTASS") {
+          await injectScript(details.tabId, showStapeContainerId, true);
+          console.log('STAPE: Injected showStapeContainerId for GTMTASS');
         }                
       }
     }
   });
 
-  // Inject monitor function
-  async function injectScriptToTab(tabId: number, scriptFunc: Function) {
+  // Inject script with feature state
+  async function injectScript(tabId: number, scriptFunc: Function, isEnabled: boolean) {
     try {
       try {
         await browser.scripting.executeScript({
           target: { tabId },
           func: scriptFunc,
+          args: [isEnabled],
           injectImmediately: true,
           world: 'MAIN'
         });
       } catch (error) {
         // Fallback for Firefox
-        console.log('Falling back to basic injection for urlBlockParser');
+        console.log('Falling back to basic injection with state');
         await browser.scripting.executeScript({
           target: { tabId },
-          func: scriptFunc
+          func: scriptFunc,
+          args: [isEnabled]
         });
       }
-
-
     } catch (error) {
-      console.log(`STAPE:ERROR Failed to inject monitor on tab ${tabId}:`, error);
+      console.log(`STAPE:ERROR Failed to inject script with state on tab ${tabId}:`, error);
     }
   }
+
 
   browser.webRequest.onHeadersReceived.addListener(
     async (details: any) => {
@@ -156,16 +199,19 @@ export default defineBackground(() => {
   });
 
   onMessage("EXECUTE_SCRIPT", (details) => {
+  
     return browser.tabs.query({ active: true, currentWindow: true }).then(async (tabs) => {
+      
       if (tabs[0]) {
         const { command, action } = details.data;
-        console.log("TOGGLE FEATURE", command, action);        
+        console.log("TOGGLE FEATURE", details.data);        
         try {
           await browser.scripting.executeScript({
             target: { tabId: tabs[0].id },
-            func: (apiCommand, actionType) => {
-              if (window.__stape_extension && window.__stape_extension[apiCommand]) {
-                window.__stape_extension[apiCommand][actionType]();
+            func: (command, action) => {
+              console.log("DAVID", command, action)
+              if (window.__stape_extension && window.__stape_extension[command]) {
+                window.__stape_extension[command][action]();
               }
             },
             args: [command, action],

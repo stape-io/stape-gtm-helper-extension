@@ -1,5 +1,5 @@
-export function consentStatusMonitor() {
-  console.log("STAPE GTM HELPER: Starting Consent Status Monitor")
+export function consentStatusMonitor(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Consent Status Monitor", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function ConsentStatusMonitor() {
@@ -26,14 +26,9 @@ export function consentStatusMonitor() {
 
     const monitor = {
       observer: null,
-      detectedComponents: new Set(),
-      callbacks: [],
-      debounceTimer: null,
-      lastTitle: null
-    };
-
-    monitor.onConsentStatusUpdate = function(callback) {
-      monitor.callbacks.push(callback);
+      checkInterval: null,
+      currentGcsValue: null,
+      isActive: false
     };
 
     monitor.injectStyles = function() {
@@ -57,76 +52,43 @@ export function consentStatusMonitor() {
       document.head.appendChild(styleEl);
     };
 
-    monitor.checkAndUpdate = function() {
-      console.log('Consent Monitor - checkAndUpdate called');
-      const targetElement = document.querySelector(".message-list__group .message-list__row--child-selected .wd-debug-message-title");
-      console.log('Consent Monitor - Target element found:', !!targetElement);
+    monitor.findSelectedRequest = function() {
+      // Try multiple selectors to find the selected request
+      const selectors = [
+        ".message-list__group .message-list__row--child-selected .wd-debug-message-title",
+        ".message-list__row--child-selected .wd-debug-message-title",
+        ".wd-debug-message-title"
+      ];
       
-      if (targetElement) {
-        const currentTitle = targetElement.title;
-        console.log('Consent Monitor - Current title:', currentTitle);
-        
-        if (currentTitle !== monitor.lastTitle) {
-          console.log('Consent Monitor - Title changed from', monitor.lastTitle, 'to', currentTitle);
-          
-          if (currentTitle && currentTitle.startsWith('collect') && currentTitle.includes('v=2')) {
-            console.log('Consent Monitor - Title matches collect pattern');
-            const gcsMatch = currentTitle.match(/gcs=([^&]+)/i);
-            
-            if (gcsMatch) {
-              const gcsValue = gcsMatch[1].toLowerCase();
-              console.log('Consent Monitor - GCS value found:', gcsValue);
-              console.log('Consent Monitor - Available mappings:', Object.keys(consentMappings));
-              
-              if (consentMappings[gcsValue]) {
-                console.log('Consent Monitor - Injecting consent status for:', gcsValue);
-                monitor.injectConsentStatus(gcsValue);
-                monitor.executeCallbacks([{
-                  gcsValue: gcsValue,
-                  consentStates: consentMappings[gcsValue],
-                  timestamp: new Date().toISOString()
-                }]);
-              } else {
-                console.log('Consent Monitor - No mapping found for GCS:', gcsValue);
-              }
-            } else {
-              console.log('Consent Monitor - No GCS match found in title');
-            }
-          } else {
-            console.log('Consent Monitor - Title does not match collect pattern, removing status');
-            monitor.removeConsentStatus();
-          }
-          monitor.lastTitle = currentTitle;
-        } else {
-          console.log('Consent Monitor - Title unchanged');
-        }
-      } else {
-        console.log('Consent Monitor - No target element found');
-        if (monitor.lastTitle !== null) {
-          monitor.lastTitle = null;
+      for (const selector of selectors) {
+        const element = document.querySelector(selector);
+        if (element && element.title) {
+          return element.title;
         }
       }
+      return null;
     };
 
-    monitor.injectConsentStatus = function(gcsValue) {
-      console.log('Consent Monitor - injectConsentStatus called with:', gcsValue);
-      const insertTarget = document.querySelector(".blg-card-tabs");
-      console.log('Consent Monitor - Insert target found:', !!insertTarget);
-      if (!insertTarget) return;
-
-      monitor.removeConsentStatus();
-
-      const statuses = consentMappings[gcsValue];
-      console.log('Consent Monitor - Consent types:', consentTypes);
-      console.log('Consent Monitor - Status mapping:', statuses);
+    monitor.extractGcsValue = function(url) {
+      if (!url || !url.includes('collect') || !url.includes('v=2')) {
+        return null;
+      }
       
-      // Generate table rows matching GTM's exact structure
+      const gcsMatch = url.match(/gcs=([^&]+)/i);
+      if (gcsMatch) {
+        const gcsValue = gcsMatch[1].toLowerCase();
+        return consentMappings[gcsValue] ? gcsValue : null;
+      }
+      return null;
+    };
+
+    monitor.createConsentTable = function(gcsValue) {
+      const statuses = consentMappings[gcsValue];
+      
       const tableRows = consentTypes.map((type, index) => {
         const status = statuses[index];
         const statusDisplay = status === 'granted' ? 'Granted' : status === 'denied' ? 'Denied' : '-';
         const statusClass = status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undefined';
-        
-        console.log(`Consent Monitor - Generating row for ${type}: ${status} -> ${statusDisplay}`);
         
         return `
           <tr class="gtm-debug-table-row gtm-debug-consent-table-row">
@@ -144,13 +106,11 @@ export function consentStatusMonitor() {
           </tr>`;
       }).join('');
       
-      console.log('Consent Monitor - Generated table rows:', tableRows);
-      
-      const consentTableHTML = `
+      return `
         <table class="gtm-debug-consent-table dma-consent-table" style="margin-bottom:1em ">
           <thead>
             <tr class="gtm-debug-table-row">
-              <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://stape.io/favicon.ico"></th>
+              <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://stape.io/favicon.ico" /></th>
               <th class="gtm-debug-table-header-cell">On-page Default</th>
               <th class="gtm-debug-table-header-cell">On-page Update</th>
             </tr>
@@ -160,54 +120,79 @@ export function consentStatusMonitor() {
           </tbody>
         </table>
       `;
+    };
+
+    monitor.showConsentTable = function(gcsValue) {
+      const insertTarget = document.querySelector(".blg-card-tabs");
+      if (!insertTarget) {
+        console.log('Consent Monitor - No insertion target found');
+        return false;
+      }
+
+      // Remove existing table
+      monitor.hideConsentTable();
+
+      const tableHTML = monitor.createConsentTable(gcsValue);
+      insertTarget.insertAdjacentHTML('afterend', tableHTML);
       
-      console.log('Consent Monitor - Final HTML:', consentTableHTML);
-      insertTarget.insertAdjacentHTML('afterend', consentTableHTML);
-
-      console.log(`Consent Monitor - Injected consent table for GCS: ${gcsValue}`);
+      console.log(`Consent Monitor - Showed consent table for GCS: ${gcsValue}`);
+      return true;
     };
 
-    monitor.removeConsentStatus = function() {
+    monitor.hideConsentTable = function() {
       const existingTable = document.querySelector('.gtm-debug-consent-table');
-      if (existingTable) existingTable.remove();
+      if (existingTable) {
+        existingTable.remove();
+        console.log('Consent Monitor - Removed consent table');
+      }
     };
 
-    monitor.processNewComponents = function() {
-      if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
-      monitor.debounceTimer = setTimeout(() => {
-        monitor.checkAndUpdate();
-      }, 100);
+    monitor.checkCurrentState = function() {
+      if (!monitor.isActive) return;
+      
+      const currentTitle = monitor.findSelectedRequest();
+      const gcsValue = currentTitle ? monitor.extractGcsValue(currentTitle) : null;
+      
+      // Only update if GCS value changed
+      if (gcsValue !== monitor.currentGcsValue) {
+        console.log(`Consent Monitor - GCS changed from ${monitor.currentGcsValue} to ${gcsValue}`);
+        monitor.currentGcsValue = gcsValue;
+        
+        if (gcsValue) {
+          monitor.showConsentTable(gcsValue);
+        } else {
+          monitor.hideConsentTable();
+        }
+      }
     };
 
     monitor.start = function() {
+      if (monitor.isActive) {
+        console.log('Consent Monitor - Already active');
+        return;
+      }
+      
+      console.log('Consent Monitor - Starting');
+      monitor.isActive = true;
+      monitor.currentGcsValue = null;
+      
       monitor.injectStyles();
-      monitor.processNewComponents();
-
-      monitor.observer = new MutationObserver((mutations) => {
-        let shouldProcess = false;
-        mutations.forEach((mutation) => {
-          mutation.addedNodes.forEach((node) => {
-            if (node.nodeType === Node.ELEMENT_NODE) {
-              const element = node;
-              if (element.classList?.contains('message-list__row--child-selected') || 
-                  element.querySelector?.('.message-list__row--child-selected') ||
-                  element.classList?.contains('wd-debug-message-title') ||
-                  element.querySelector?.('.wd-debug-message-title')) {
-                shouldProcess = true;
-              }
-            }
-          });
-          
-          // Also check for attribute changes on existing elements
-          if (mutation.type === 'attributes' && 
-              (mutation.target.classList?.contains('message-list__row') ||
-               mutation.target.classList?.contains('wd-debug-message-title'))) {
-            shouldProcess = true;
-          }
-        });
-        if (shouldProcess) {
-          monitor.processNewComponents();
-        }
+      
+      // Check immediately
+      monitor.checkCurrentState();
+      
+      // Set up periodic checking
+      monitor.checkInterval = setInterval(() => {
+        monitor.checkCurrentState();
+      }, 500);
+      
+      // Set up DOM observer for changes
+      monitor.observer = new MutationObserver(() => {
+        // Debounced check
+        clearTimeout(monitor.debounceTimer);
+        monitor.debounceTimer = setTimeout(() => {
+          monitor.checkCurrentState();
+        }, 100);
       });
 
       monitor.observer.observe(document.body, { 
@@ -216,62 +201,55 @@ export function consentStatusMonitor() {
         attributes: true,
         attributeFilter: ['class', 'title']
       });
+      
+      console.log('Consent Monitor - Started with periodic checking');
     };
 
     monitor.stop = function() {
+      if (!monitor.isActive) {
+        console.log('Consent Monitor - Not active');
+        return;
+      }
+      
+      console.log('Consent Monitor - Stopping');
+      monitor.isActive = false;
+      monitor.currentGcsValue = null;
+      
+      if (monitor.checkInterval) {
+        clearInterval(monitor.checkInterval);
+        monitor.checkInterval = null;
+      }
+      
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
-        if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
-        
-        monitor.removeConsentStatus();
-        
-        console.log('Consent Status Monitor stopped and consent status removed');
       }
-    };
-
-    monitor.executeCallbacks = function(components) {
-      monitor.callbacks.forEach(callback => {
-        try { callback(components); } catch (error) {
-          console.error('Error in callback:', error);
-        }
-      });
-    };
-
-    monitor.getStats = function() {
-      return {
-        isMonitoring: monitor.observer !== null,
-        lastTitle: monitor.lastTitle,
-        hasConsentTable: !!document.querySelector('.gtm-debug-consent-table')
-      };
-    };
-
-    monitor.clearCache = function() {
-      monitor.lastTitle = null;
-      console.log('Cache cleared');
+      
+      if (monitor.debounceTimer) {
+        clearTimeout(monitor.debounceTimer);
+        monitor.debounceTimer = null;
+      }
+      
+      monitor.hideConsentTable();
+      
+      // Remove styles
+      const styleEl = document.getElementById(stylesId);
+      if (styleEl) styleEl.remove();
+      
+      console.log('Consent Monitor - Stopped');
     };
 
     return monitor;
   }
 
-  // Initialize and start
+  // Initialize
   window.__stape_extension.consentStatusMonitor = ConsentStatusMonitor();
-  
-  // Add manual test function for debugging
-  window.__stape_extension.consentStatusMonitor.testInject = function(gcsValue = 'g100') {
-    console.log('Manual test injection with GCS:', gcsValue);
-    window.__stape_extension.consentStatusMonitor.injectConsentStatus(gcsValue);
-  };
 
-  window.__stape_extension.consentStatusMonitor.onConsentStatusUpdate((components) => {
-    console.log(`Consent status updated for ${components.length} component(s)`);
-    components.forEach((info, index) => {
-      console.log(`Update ${index + 1}: GCS=${info.gcsValue}, States=${info.consentStates.join(',')}`);
-    });
-  });
-
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.consentStatusMonitor.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Consent Status Monitor auto-starting (feature is enabled)');
+    window.__stape_extension.consentStatusMonitor.start();
+  } else {
+    console.log('STAPE: Consent Status Monitor not auto-starting (feature is disabled)');
+  }
 }

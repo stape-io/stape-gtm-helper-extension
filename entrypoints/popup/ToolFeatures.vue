@@ -31,16 +31,22 @@
             <div class="flex items-center gap-3">
               <h3 class="font-medium text-gray-900 text-base">{{ feature.name }}</h3>
               
-              <!-- Environment badges inline -->
-              <div v-if="!compactMode" class="flex gap-1">
-                <span 
-                  v-for="env in feature.environments" 
-                  :key="env"
-                  class="px-1.5 py-0.5 text-xs font-medium rounded"
-                  :class="getEnvironmentBadgeClass(env)"
+              <!-- Environment info icon -->
+              <div v-if="!compactMode" class="relative group">
+                <svg 
+                  class="w-4 h-4 text-gray-400 hover:text-gray-600 cursor-help transition-colors duration-200" 
+                  fill="none" 
+                  stroke="currentColor" 
+                  viewBox="0 0 24 24"
                 >
-                  {{ env.replace('GTM','') }}
-                </span>
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+                <!-- Icon tooltip -->
+                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-gray-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity duration-200 pointer-events-none z-50">
+                  {{ getEnvironmentTooltip(feature.environments) }}
+                  <!-- Arrow -->
+                  <div class="absolute top-full left-1/2 transform -translate-x-1/2 w-0 h-0 border-l-4 border-r-4 border-t-4 border-transparent border-t-gray-800"></div>
+                </div>
               </div>
             </div>
             
@@ -76,24 +82,27 @@ import { sendMessage } from 'webext-bridge/popup';
 
 
 
-const compactMode = ref(false)
+const compactMode = ref(true)
 
 const features = ref([])
 
 const toggleFeature = async (featureId) => {
+  if (!Array.isArray(features.value)) {
+    return;
+  }
+  
   const feature = features.value.find(f => f.id === featureId)
+
   if (feature) {
     feature.enabled = !feature.enabled
-    console.log(`Feature ${feature.name} is now ${feature.enabled ? 'enabled' : 'disabled'}`)
     
     // Save updated settings to storage
     try {
       const settings = await storage.getMeta('local:settingsDEV')
-      settings.features = features.value
+      // Ensure we save a plain array, not a reactive reference
+      settings.features = JSON.parse(JSON.stringify(features.value))
       await storage.setMeta('local:settingsDEV', settings)
-      console.log('Settings saved to storage')
     } catch (error) {
-      console.error('Failed to save settings:', error)
     }
     
     // Send command to content script
@@ -128,9 +137,37 @@ const getEnvironmentBadgeClass = (env) => {
       return 'bg-gray-50 text-gray-700 border-gray-200'
   }
 }
+
+const getEnvironmentName = (env) => {
+  const envNames = {
+    'GTMUI': 'GTM Interface',
+    'GTMTA': 'GTM Preview Mode', 
+    'GTMTASS': 'Server Side Preview'
+  }
+  return envNames[env] || env
+}
+
+const getEnvironmentTooltip = (environments) => {
+  const envNames = {
+    'GTMUI': 'GTM Interface',
+    'GTMTA': 'GTM Preview Mode', 
+    'GTMTASS': 'Server Side Preview'
+  }
+  
+  const names = environments.map(env => envNames[env] || env)
+  return `Available in: ${names.join(', ')}`
+}
 onMounted(async()=>{
-  const settings = await storage.getMeta('local:settingsDEV')
-  features.value = settings.features;
+  try {
+    const settings = await storage.getMeta('local:settingsDEV')
+    const loadedFeatures = settings?.features || [];
+    // Ensure we have a proper array
+    features.value = Array.isArray(loadedFeatures) ? loadedFeatures : [];
+    console.log('Features loaded:', features.value);
+  } catch (error) {
+    console.error('Failed to load features from storage:', error);
+    features.value = [];
+  }
 })
 </script>
 

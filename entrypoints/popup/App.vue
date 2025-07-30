@@ -44,8 +44,9 @@
                 <h1 class="text-2xl font-bold text-gray-900 tracking-tight">
                   GTM Helper
                 </h1>
-                <div class="text-xs mt-1" :class="gtmStatus ? 'text-green-600' : 'text-gray-500'">
-                  {{ gtmStatus ? `Environment: ${gtmStatus.environment}` : 'No GTM Environment Detected' }}
+                <div class="text-xs mt-2 text-gray-500">
+                  <span v-if="gtmStatus" class="px-2 py-1 rounded-md font-medium bg-green-50 text-green-700 border border-green-200">{{ environmentsNamesLookup[gtmStatus.environment] }}</span>
+                  <span v-else class="px-2 py-1 rounded-md font-medium bg-gray-50 text-gray-500 border border-gray-200">No GTM Env Detected</span>
                 </div>
               </div>
             </div>
@@ -54,7 +55,7 @@
       </div>
 
       <!-- Simple Content -->
-      <div v-if="!showNewContent" class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 p-6" :class="{ 'content-fade-out': isTransitioning }">
+      <div v-if="0" class="bg-white/80 rounded-2xl shadow-sm border border-gray-200 p-6" :class="{ 'content-fade-out': isTransitioning }">
         <div class="text-center">
           <div class="mb-4">
             <svg v-if="!gtmStatus" class="w-16 h-16 mx-auto text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -83,7 +84,9 @@
       </div>
       
       <!-- Tool Features Component -->
-      <ToolFeatures v-if="showNewContent" />
+      <ToolFeatures 
+      :class="!gtmStatus ? 'hover:blue-[0px] blur-[2px] border border-black pointer-events-none': ''"
+      />
 
       <!-- Footer -->
       <div class="mt-4">
@@ -121,10 +124,14 @@ const resetSequence = [1, 2, 3, 3, 4]
 const clickSequence = ref([])
 const resetTimeout = ref(null)
 
+const environmentsNamesLookup = {
+  'GTMUI': 'GTM Interface',
+  'GTMTASS': 'Server Side Preview',
+  'GTMTA': 'GTM Preview Mode'
+}
 const getCurrentTabStatus = async () => {
   try {
     const status = await sendMessage("GET_CURRENT_TAB_STATUS", {}, "background");
-    console.log("STATE", status)
     gtmStatus.value = status;
   } catch (error) {
     gtmStatus.value = null; 

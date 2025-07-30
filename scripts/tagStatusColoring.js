@@ -1,5 +1,5 @@
-export function tagStatusColoring() {
-  console.log("STAPE GTM HELPER: Starting Tag Status Coloring")
+export function tagStatusColoring(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Tag Status Coloring", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function TagStatusColoringMonitor() {
@@ -226,8 +226,11 @@ export function tagStatusColoring() {
     });
   });
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.tagStatusColoring.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Tag Status Coloring auto-starting (feature is enabled)');
+    window.__stape_extension.tagStatusColoring.start();
+  } else {
+    console.log('STAPE: Tag Status Coloring not auto-starting (feature is disabled)');
+  }
 }

@@ -1,5 +1,5 @@
-export function previewUIFilters() {
-  console.log("STAPE GTM HELPER: Starting Preview UI Filters")
+export function previewUIFilters(isEnabled = true) {
+  console.log("STAPE GTM HELPER: Starting Preview UI Filters", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function PreviewUIFiltersMonitor() {
@@ -12,7 +12,7 @@ export function previewUIFilters() {
       currentTab: 'none',
       searchQuery: '',
       selectedFilters: [],
-      isCollapsed: false
+      isCollapsed: true
     };
 
     monitor.detectActiveTab = function() {
@@ -161,8 +161,8 @@ export function previewUIFilters() {
       const styles = `
         .stape-preview-filters {
           position: fixed;
-          top: 10px;
-          right: 10px;
+          top: 82px;
+          right: 28px;
           width: 320px;
           background: #fff;
           border: 1px solid #dadce0;
@@ -170,7 +170,7 @@ export function previewUIFilters() {
           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           font-family: 'Google Sans', Roboto, Arial, sans-serif;
           font-size: 14px;
-          z-index: 10000;
+          z-index: 5;
           max-height: 80vh;
           overflow: hidden;
           transition: all 0.3s ease;
@@ -547,6 +547,13 @@ export function previewUIFilters() {
         if (!container.contains(e.target)) {
           multiselectOptions.classList.remove('show');
           optionsVisible = false;
+          
+          // Also collapse the entire filter panel when clicking outside
+          if (!monitor.isCollapsed) {
+            monitor.isCollapsed = true;
+            toggle.classList.add('collapsed');
+            content.classList.add('collapsed');
+          }
         }
       });
     };
@@ -1057,6 +1064,13 @@ export function previewUIFilters() {
     };
 
     monitor.start = function() {
+      // Don't start if already running
+      if (monitor.observer) {
+        console.log('Preview UI Filters Monitor already running');
+        return;
+      }
+
+      console.log('Preview UI Filters Monitor starting');
       monitor.injectStyles();
       monitor.processNewComponents();
 
@@ -1100,6 +1114,7 @@ export function previewUIFilters() {
 
     monitor.stop = function() {
       if (monitor.observer) {
+        console.log('Preview UI Filters Monitor stopping');
         monitor.observer.disconnect();
         monitor.observer = null;
         if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
@@ -1111,6 +1126,8 @@ export function previewUIFilters() {
         if (styleEl) styleEl.remove();
         
         console.log('Preview UI Filters Monitor stopped and UI removed');
+      } else {
+        console.log('Preview UI Filters Monitor was not running');
       }
     };
 
@@ -1120,8 +1137,11 @@ export function previewUIFilters() {
   // Initialize and start
   window.__stape_extension.previewUIFilters = PreviewUIFiltersMonitor();
 
-  // Auto-start the monitor
-  setTimeout(() => {
-      window.__stape_extension.previewUIFilters.start();
-  }, 500);
+  // Auto-start based on enabled state
+  if (isEnabled) {
+    console.log('STAPE: Preview UI Filters auto-starting (feature is enabled)');
+    window.__stape_extension.previewUIFilters.start();
+  } else {
+    console.log('STAPE: Preview UI Filters not auto-starting (feature is disabled)');
+  }
 }
