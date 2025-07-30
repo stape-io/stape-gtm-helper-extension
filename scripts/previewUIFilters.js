@@ -170,7 +170,7 @@ export function previewUIFilters() {
           box-shadow: 0 2px 10px rgba(0,0,0,0.1);
           font-family: 'Google Sans', Roboto, Arial, sans-serif;
           font-size: 14px;
-          z-index: 10000;
+          z-index: 5;
           max-height: 80vh;
           overflow: hidden;
           transition: all 0.3s ease;
