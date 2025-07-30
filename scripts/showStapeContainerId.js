@@ -42,9 +42,9 @@ export function showStapeContainerId() {
             jsonResponse[this._id].forEach(e => {
               if (e.messageType === "REQUEST_SUMMARY") {
                 const stapeId = e?.request?.headers["x-gtm-identifier"];
-                const stapeSubscriptionId = e?.request?.headers["x-gtm-subscription-plan"];
+                //const stapeSubscriptionId = e?.request?.headers["x-gtm-subscription-plan"];
                 if(stapeId && document.querySelector('.gtm-debug-header.gtm-debug-header__version') && !document.querySelector('.gtm-debug-header.gtm-debug-header__stape_dbg')){
-                  document.querySelector('.gtm-debug-header.gtm-debug-header__version').insertAdjacentHTML('beforebegin', `<div class="gtm-debug-header gtm-debug-header__stape_dbg"> <img width="16px" height="16px" src="https://stape.io/favicon.ico" /> Container ID: ${stapeId} (${stapeSubscriptionId})</div>`);
+                  document.querySelector('.gtm-debug-header.gtm-debug-header__version').insertAdjacentHTML('beforebegin', `<div class="gtm-debug-header gtm-debug-header__stape_dbg"> <img width="16px" height="16px" src="https://stape.io/favicon.ico" /> Container ID: ${stapeId}</div>`);
                   
                   // Restore original XMLHttpRequest methods since we're done
                   XMLHttpRequest.prototype.open = originalOpen;
