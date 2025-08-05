@@ -16,19 +16,31 @@ const GTM_RULES = {
   // GTMTASS requires window variable check, not just URL
 };
 
+
+
+
 export default defineBackground(() => {
   (async () => {
+    const defaultSettings = {
+      features: [
+          {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
+          {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
+          {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
+          {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
+          {id: 'preview-ui-filtering', name: 'Entities Filter', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
+          {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
+        ]
+    };
+    // Reset Settings on Install/Update
+    browser.runtime.onInstalled.addListener(async(details) => {
+      if (details.reason === "install" || details.reason === "update") {
+        await storage.removeMeta('local:settingsDEV');  
+        await storage.setMeta('local:settingsDEV', defaultSettings)          
+      }
+    });    
     const settings = await storage.getMeta('local:settingsDEV')
     if(!settings.features){
-      settings.features = [
-        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
-        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
-        {id: 'preview-ui-filtering', name: 'Entities Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
-        {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
-      ];      
-      await storage.setMeta('local:settingsDEV', settings)
+      await storage.setMeta('local:settingsDEV', defaultSettings)          
     }    
   })();
    
@@ -65,22 +77,18 @@ export default defineBackground(() => {
         try {
           settings = await storage.getMeta('local:settingsDEV');
         } catch (error) {
-          console.log('STAPE: Error reading settings:', error);
           settings = null;
         }
         
         const featureStates = {};
         
-        console.log('STAPE: Loading settings from storage:', settings);
         
         if (settings?.features && Array.isArray(settings.features)) {
           settings.features.forEach(feature => {
             featureStates[feature.apiCommand] = feature.enabled;
-            console.log(`STAPE: Feature ${feature.apiCommand} -> ${feature.enabled}`);
           });
         } else {
           // Fallback: if no settings found, enable all features by default
-          console.log('STAPE: No settings found, using fallback enabled states');
           featureStates.urlBlocksParser = true;
           featureStates.tagStatusColoring = true;
           featureStates.tagTypeColoring = true;
@@ -89,7 +97,6 @@ export default defineBackground(() => {
           featureStates.jsonFormatterInline = true;
         }
         
-        console.log('STAPE: Final feature states:', featureStates);
 
         // Create script function mapping
         const scriptMapping = {
@@ -106,7 +113,6 @@ export default defineBackground(() => {
           for (const feature of settings.features) {
             if (feature.environments.includes(isGTMEnv.environment) && scriptMapping[feature.apiCommand]) {
               await injectScript(details.tabId, scriptMapping[feature.apiCommand], featureStates[feature.apiCommand]);
-              console.log(`STAPE: Injected ${feature.apiCommand} for ${isGTMEnv.environment}`);
             }
           }
         }
@@ -114,7 +120,6 @@ export default defineBackground(() => {
         // Always inject showStapeContainerId for GTMTASS (not configurable)
         if (isGTMEnv?.environment === "GTMTASS") {
           await injectScript(details.tabId, showStapeContainerId, true);
-          console.log('STAPE: Injected showStapeContainerId for GTMTASS');
         }                
       }
     }
@@ -133,7 +138,6 @@ export default defineBackground(() => {
         });
       } catch (error) {
         // Fallback for Firefox
-        console.log('Falling back to basic injection with state');
         await browser.scripting.executeScript({
           target: { tabId },
           func: scriptFunc,
@@ -141,7 +145,6 @@ export default defineBackground(() => {
         });
       }
     } catch (error) {
-      console.log(`STAPE:ERROR Failed to inject script with state on tab ${tabId}:`, error);
     }
   }
 
@@ -181,7 +184,6 @@ export default defineBackground(() => {
 
   browser.tabs.onRemoved.addListener((tabId) => {
     if (tabStatus.has(tabId)) {
-      console.log(`Tab ${tabId} closed, removing from tracking`);
       tabStatus.delete(tabId);
       injectedTabs.delete(tabId);
     }
@@ -204,12 +206,11 @@ export default defineBackground(() => {
       
       if (tabs[0]) {
         const { command, action } = details.data;
-        console.log("TOGGLE FEATURE", details.data);        
+        
         try {
           await browser.scripting.executeScript({
             target: { tabId: tabs[0].id },
             func: (command, action) => {
-              console.log("DAVID", command, action)
               if (window.__stape_extension && window.__stape_extension[command]) {
                 window.__stape_extension[command][action]();
               }

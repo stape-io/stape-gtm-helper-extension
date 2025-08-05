@@ -1,5 +1,4 @@
 export function tagStatusColoring(isEnabled = true) {
-  console.log("STAPE GTM HELPER: Starting Tag Status Coloring", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function TagStatusColoringMonitor() {
@@ -17,10 +16,9 @@ export function tagStatusColoring(isEnabled = true) {
       monitor.callbacks.push(callback);
     };
 
-    // Inject CSS styles for failed status
     monitor.injectStyles = function() {
       let styleEl = document.getElementById(vendorStylesId);
-      if (styleEl) return; // already injected
+      if (styleEl) return;
 
       const styles = `
         .stape-status-failed {
@@ -45,7 +43,6 @@ export function tagStatusColoring(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-    // Check if card contains "failed" text
     monitor.hasFailedStatus = function(card) {
       const cardText = card.textContent || '';
       return /failed/i.test(cardText);
@@ -173,7 +170,6 @@ export function tagStatusColoring(isEnabled = true) {
         
         monitor.restoreAll();
         
-        console.log('Tag Status Coloring Monitor stopped and all components restored');
       }
     };
 
@@ -197,7 +193,6 @@ export function tagStatusColoring(isEnabled = true) {
     monitor.clearCache = function() {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
-      console.log('Cache cleared');
     };
 
     monitor.restoreAll = function() {
@@ -210,27 +205,18 @@ export function tagStatusColoring(isEnabled = true) {
       if (styleEl) styleEl.remove();
       
       monitor.coloredComponents.clear();
-      console.log('All components restored to original state');
     };
 
     return monitor;
   }
 
-  // Initialize and start
   window.__stape_extension.tagStatusColoring = TagStatusColoringMonitor();
 
   window.__stape_extension.tagStatusColoring.onNewTagCards((components) => {
-    console.log(`Enhanced ${components.length} tag card(s) with failed status coloring`);
-    components.forEach((info, index) => {
-      console.log(`Card ${index + 1}: ${info.tagType} - ${info.status}`);
-    });
   });
 
-  // Auto-start based on enabled state
   if (isEnabled) {
-    console.log('STAPE: Tag Status Coloring auto-starting (feature is enabled)');
     window.__stape_extension.tagStatusColoring.start();
   } else {
-    console.log('STAPE: Tag Status Coloring not auto-starting (feature is disabled)');
   }
 }

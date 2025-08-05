@@ -160,7 +160,6 @@ const handleCornerClick = (cornerIndex) => {
   
   // Add corner to sequence
   clickSequence.value.push(cornerIndex)
-  console.log('Corner clicked:', cornerIndex, 'Sequence:', clickSequence.value)
   
   // Check if sequence matches the reset pattern
   const isSequenceCorrect = clickSequence.value.every((click, index) => 

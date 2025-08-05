@@ -1,11 +1,9 @@
 export function tagTypeColoring(isEnabled = true) {
-  console.log("STAPE GTM HELPER: Starting Tag Type Coloring", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function TagTypeColoringMonitor() {
     const vendorStylesId = 'tag-types-coloring-styles';
     
-    // Map regex to vendor info with color and icon URL
     const vendorMap = new Map([   
       [/Google Tag|Google Analytics|Google Analytics 4/i, { vendor: 'google', color: '#EEA849', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
       [/Data Tag|Stape/i, { vendor: 'stape', color: '#FF6D34', icon: 'https://cdn.stape.io/i/688a4bb90eaac838702555.ico' }],
@@ -32,15 +30,13 @@ export function tagTypeColoring(isEnabled = true) {
       monitor.callbacks.push(callback);
     };
 
-    // Inject CSS styles for each vendor class with left border and icon via ::before
     monitor.injectStyles = function() {
       let styleEl = document.getElementById(vendorStylesId);
-      if (styleEl) return; // already injected
+      if (styleEl) return;
 
       const styles = Array.from(vendorMap.values()).map(({ vendor, color, icon }) => `
         .stape-border-${vendor} {
           border-left: 4px solid ${color} !important;
-         /* padding-left: 8px; /* make space for the border */
         }
         .stape-border-${vendor} .gtm-debug-card__title::before {
           content: "";
@@ -64,7 +60,6 @@ export function tagTypeColoring(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-    // Detect vendor class from the tag type text
     monitor.getVendorClass = function(tagTypeText) {
       for (const [regex, info] of vendorMap) {
         if (regex.test(tagTypeText)) {
@@ -194,7 +189,6 @@ export function tagTypeColoring(isEnabled = true) {
         
         monitor.restoreAll();
         
-        console.log('Tag Type Coloring Monitor stopped and all components restored');
       }
     };
 
@@ -218,7 +212,6 @@ export function tagTypeColoring(isEnabled = true) {
     monitor.clearCache = function() {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
-      console.log('Cache cleared');
     };
 
     monitor.restoreAll = function() {
@@ -233,30 +226,18 @@ export function tagTypeColoring(isEnabled = true) {
       if (styleEl) styleEl.remove();
       
       monitor.coloredComponents.clear();
-      console.log('All components restored to original state');
     };
 
     return monitor;
   }
 
-  // Initialize and start
   window.__stape_extension.tagTypeColoring = TagTypeColoringMonitor();
 
   window.__stape_extension.tagTypeColoring.onNewTagCards((components) => {
-    console.log(`Enhanced ${components.length} tag card(s) with vendor coloring`);
-    components.forEach((info, index) => {
-      console.log(`Card ${index + 1}: ${info.tagType} - ${info.vendorClass}`);
-    });
   });
 
-  // Auto-start based on enabled state
-  console.log('=============================================================');
-  console.log('STAPE: Tag Type Coloring checking isEnabled:', { isEnabled, type: typeof isEnabled, strict: isEnabled === true });
   if (isEnabled === true) {
-    console.log('STAPE: Tag Type Coloring auto-starting (feature is enabled)');
     window.__stape_extension.tagTypeColoring.start();
   } else {
-    console.log('STAPE: Tag Type Coloring not auto-starting (feature is disabled)');
   }
-  console.log('=============================================================');
 }
