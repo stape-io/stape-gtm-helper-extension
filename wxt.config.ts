@@ -18,7 +18,7 @@ export default defineConfig({
       tailwindcss()      
     ],
   }),
-  runner: {
+  webExt: {
     startUrls: ['https://tagmanager.google.com/'],
   },  
 });
