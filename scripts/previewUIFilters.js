@@ -1,7 +1,8 @@
 export function previewUIFilters(isEnabled = true) {
-  console.log("STARTING previewUIFilters")
   if (!isEnabled) return;
 
+  window.__stape_extension = window.__stape_extension || {};
+  
   const findGTMDoc = () => {
     if (document.querySelector('tags-tab') || document.querySelector('variables-tab')) {
       return document;
@@ -21,38 +22,41 @@ export function previewUIFilters(isEnabled = true) {
     return null;
   };
 
-  const gtmDoc = findGTMDoc();
-  if (!gtmDoc) {
-    setTimeout(() => previewUIFilters(isEnabled), 1000);
-    return;
-  }
-
   let selectedTypes = [];
   let searchQuery = '';
   let isCollapsed = true;
+  let filtersEnabled = true;
+  let observer = null;
+
+  const gtmDoc = findGTMDoc();
 
   const detectCurrentTab = () => {
-    const allTabs = gtmDoc.querySelectorAll('.blg-card-tabs *');
-    const selectedTabs = gtmDoc.querySelectorAll('.header__tab--selected');
-    const allTabElements = gtmDoc.querySelectorAll('[class*="tab"]');
+    const currentGtmDoc = findGTMDoc();
+    if (!currentGtmDoc) return null;
     
+    let tagsTabSelected = currentGtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.TAGS)"]') ||
+                         currentGtmDoc.querySelector('.header__tab--selected[data-ng-click*="TAGS"]');
+                         
+    let variablesTabSelected = currentGtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.VARIABLES)"]') ||
+                              currentGtmDoc.querySelector('.header__tab--selected[data-ng-click*="VARIABLES"]');
     
-    selectedTabs.forEach((tab, i) => {
-      if (i < 5) {
-      }
-    });
+    if (!tagsTabSelected && !variablesTabSelected) {
+      const selectedTabs = currentGtmDoc.querySelectorAll('.header__tab--selected');
+      selectedTabs.forEach(tab => {
+        const text = tab.textContent.toLowerCase();
+        if (text.includes('tag') && !text.includes('variable')) {
+          tagsTabSelected = tab;
+        } else if (text.includes('variable')) {
+          variablesTabSelected = tab;
+        }
+      });
+    }
     
-    const tagsTabSelected = gtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.TAGS)"]');
-    
-  
-    const variablesTabSelected = gtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.VARIABLES)"]');
-    
-    
-    if (tagsTabSelected && gtmDoc.querySelector('.tags-tab__tag.gtm-debug-card')) {
+    if (tagsTabSelected) {
       return 'tags';
     }
     
-    if (variablesTabSelected && gtmDoc.querySelector('.gtm-debug-variable-table-row')) {
+    if (variablesTabSelected) {
       return 'variables';
     }
     
@@ -60,11 +64,15 @@ export function previewUIFilters(isEnabled = true) {
   };
 
   const getItems = () => {
+    const currentGtmDoc = findGTMDoc();
+    if (!currentGtmDoc) return [];
+    
     const currentTab = detectCurrentTab();
+    
     if (currentTab === 'tags') {
-      return gtmDoc.querySelectorAll('.tags-tab__tag.gtm-debug-card');
+      return currentGtmDoc.querySelectorAll('.tags-tab__tag.gtm-debug-card');
     } else if (currentTab === 'variables') {
-      return gtmDoc.querySelectorAll('.gtm-debug-variable-table-row');
+      return currentGtmDoc.querySelectorAll('.gtm-debug-variable-pane-content .gtm-debug-variable-table .gtm-debug-variable-table-row');
     }
     return [];
   };
@@ -86,6 +94,7 @@ export function previewUIFilters(isEnabled = true) {
       } else if (currentTab === 'variables') {
         const typeCells = item.querySelectorAll('.gtm-debug-table-cell');
         if (typeCells.length > 1) {
+          // Extract from Variable Type column (index 1)
           type = typeCells[1].textContent.trim();
         }
       }
@@ -100,22 +109,28 @@ export function previewUIFilters(isEnabled = true) {
   };
 
   const createUI = () => {
-    if (gtmDoc.getElementById('stape-filter')) return;
+    try {
+      const currentGtmDoc = findGTMDoc();
+      if (!currentGtmDoc) return;
+      
+      const existingFilters = currentGtmDoc.querySelectorAll('[id^="stape-filter"]');
+      existingFilters.forEach(filter => filter.remove());
 
-    const currentTab = detectCurrentTab();
-    if (!currentTab) return;
+      const currentTab = detectCurrentTab();
+      if (!currentTab) return;
 
-    const types = getTypes();
-    if (types.length === 0) return;
+      const types = getTypes();
 
-    const tabLabel = currentTab === 'tags' ? 'Tag' : 'Variable';
+    const tabLabel = currentTab === 'tags' ? 'Tags' : 'Variables';
     const itemLabel = currentTab === 'tags' ? 'tags' : 'variables';
 
-    const container = gtmDoc.createElement('div');
-    container.id = 'stape-filter';
+    selectedTypes = types.map(([type, count]) => type);
+
+    const container = currentGtmDoc.createElement('div');
+    container.id = `stape-filter-${currentTab}`;
     container.innerHTML = `
       <style>
-        #stape-filter {
+        [id^="stape-filter"] {
           position: fixed; top: 80px; right: 20px; width: 320px;
           background: white; border: 1px solid #dadce0; border-radius: 8px;
           box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: 'Google Sans', Roboto, Arial, sans-serif;
@@ -178,73 +193,148 @@ export function previewUIFilters(isEnabled = true) {
         .stape-close:hover { 
           color: #202124; background: #f1f3f4; 
         }
+        .stape-buttons {
+          padding: 16px; background: #f8f9fa;
+          border-top: 1px solid #e8eaed;
+          display: flex; gap: 12px; justify-content: center;
+        }
+        .stape-btn {
+          padding: 8px 16px; border: none; border-radius: 6px;
+          font-size: 13px; cursor: pointer; font-weight: 500;
+          transition: all 0.2s ease; min-width: 80px;
+          box-shadow: 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .stape-btn#stape-select-all {
+          background: #1a73e8; color: white;
+        }
+        .stape-btn#stape-select-all:hover {
+          background: #1557b0; box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .stape-btn#stape-clear-all {
+          background: white; color: #5f6368; border: 1px solid #dadce0;
+        }
+        .stape-btn#stape-clear-all:hover {
+          background: #f8f9fa; border-color: #5f6368;
+          box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .stape-btn:active {
+          transform: translateY(1px);
+        }
+        .stape-btn:disabled {
+          opacity: 0.4; cursor: not-allowed; pointer-events: none;
+          box-shadow: none; transform: none;
+        }
       </style>
       <div class="stape-header">
-        <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel}s Filter</div>
+        <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel} Filter</div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <div class="stape-toggle ${isCollapsed ? 'collapsed' : ''}">▲</div>
         </div>
       </div>
       <div class="stape-content ${isCollapsed ? 'collapsed' : ''}">
         <div class="stape-section">
-          <div class="stape-label">Search ${tabLabel}s</div>
+          <div class="stape-label">Search ${tabLabel}</div>
           <input type="text" class="stape-input" id="stape-search" placeholder="Search ${itemLabel}...">
         </div>
         <div class="stape-section">
           <div class="stape-label">Filter by Type</div>
           <div class="stape-types" id="stape-types">
-            ${types.map(([type, count]) => `
+            ${types.length > 0 ? types.map(([type, count]) => `
               <div class="stape-type">
-                <input type="checkbox" value="${type}" id="type-${type.replace(/\s+/g, '-')}">
+                <input type="checkbox" value="${type}" id="type-${type.replace(/\s+/g, '-')}" checked>
                 <label for="type-${type.replace(/\s+/g, '-')}">${type}</label>
                 <span class="stape-count">${count}</span>
               </div>
-            `).join('')}
+            `).join('') : `
+              <div style="padding: 16px; text-align: center; color: #5f6368; font-style: italic;">
+                No ${itemLabel} available to filter
+              </div>
+            `}
           </div>
+        </div>
+        <div class="stape-buttons">
+          <button class="stape-btn" id="stape-select-all" ${types.length === 0 ? 'disabled' : ''}>Select All</button>
+          <button class="stape-btn" id="stape-clear-all" ${types.length === 0 ? 'disabled' : ''}>Clear All</button>
         </div>
       </div>
     `;
 
-    gtmDoc.body.appendChild(container);
+    currentGtmDoc.body.appendChild(container);
 
     const header = container.querySelector('.stape-header');
     const closeBtn = container.querySelector('.stape-close');
     
-    header.addEventListener('click', (e) => {
-      if (e.target === closeBtn) return;
+    if (header) {
+      header.addEventListener('click', (e) => {
+        if (closeBtn && e.target === closeBtn) return;
+        
+        isCollapsed = !isCollapsed;
+        const content = container.querySelector('.stape-content');
+        const toggle = container.querySelector('.stape-toggle');
+        
+        if (content) content.classList.toggle('collapsed', isCollapsed);
+        if (toggle) toggle.classList.toggle('collapsed', isCollapsed);
+      });
+    }
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        container.remove();
+      });
+    }
+
+    const searchInput = currentGtmDoc.getElementById('stape-search');
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value.toLowerCase();
+        applyFilters();
+      });
+    }
+
+    container.querySelectorAll('.stape-type').forEach(typeDiv => {
+      const checkbox = typeDiv.querySelector('input[type="checkbox"]');
       
-      isCollapsed = !isCollapsed;
-      const content = container.querySelector('.stape-content');
-      const toggle = container.querySelector('.stape-toggle');
-      
-      content.classList.toggle('collapsed', isCollapsed);
-      toggle.classList.toggle('collapsed', isCollapsed);
-    });
-
-    closeBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      container.remove();
-    });
-
-    gtmDoc.getElementById('stape-search').addEventListener('input', (e) => {
-      searchQuery = e.target.value.toLowerCase();
-      applyFilters();
-    });
-
-    container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
-      cb.addEventListener('change', () => {
+      typeDiv.addEventListener('click', (e) => {
+        if (e.target !== checkbox) {
+          checkbox.checked = !checkbox.checked;
+        }
         selectedTypes = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
           .map(cb => cb.value);
         applyFilters();
       });
     });
+
+    const selectAllBtn = currentGtmDoc.getElementById('stape-select-all');
+    const clearAllBtn = currentGtmDoc.getElementById('stape-clear-all');
+
+    if (selectAllBtn) {
+      selectAllBtn.addEventListener('click', () => {
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = true);
+        selectedTypes = types.map(([type, count]) => type);
+        applyFilters();
+      });
+    }
+
+    if (clearAllBtn) {
+      clearAllBtn.addEventListener('click', () => {
+        const checkboxes = container.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach(cb => cb.checked = false);
+        selectedTypes = [];
+        applyFilters();
+      });
+    }
+    } catch (error) {
+    }
   };
 
  
   const applyFilters = () => {
     const currentTab = detectCurrentTab();
+    const items = getItems();
     
-    getItems().forEach(item => {
+    items.forEach(item => {
       let visible = true;
       let type = '';
 
@@ -264,43 +354,118 @@ export function previewUIFilters(isEnabled = true) {
 
       if (selectedTypes.length > 0) {
         visible = selectedTypes.includes(type);
+      } else {
+        visible = false;
       }
 
       if (searchQuery && visible) {
-        const text = item.textContent.toLowerCase();
-        visible = text.includes(searchQuery);
+        if (currentTab === 'variables') {
+          const typeCells = item.querySelectorAll('.gtm-debug-table-cell');
+          let searchText = '';
+          
+          if (typeCells.length > 0) {
+            searchText += typeCells[0].textContent.toLowerCase();
+          }
+          
+          if (typeCells.length > 3) {
+            const valueCell = typeCells[3];
+            const valueDiv = valueCell.querySelector('.gtm-debug-variable-table-value');
+            if (valueDiv) {
+              searchText += ' ' + valueDiv.textContent.toLowerCase();
+            }
+          }
+          
+          visible = searchText.includes(searchQuery);
+        } else {
+          const text = item.textContent.toLowerCase();
+          visible = text.includes(searchQuery);
+        }
       }
 
       item.style.display = visible ? '' : 'none';
     });
   };
 
-  createUI();
+  if (gtmDoc) {
+    createUI();
+  }
 
   const checkAndUpdateFilter = () => {
-    const currentTab = detectCurrentTab();
-    const existingFilter = gtmDoc.getElementById('stape-filter');
-    
-    
-    if (currentTab && getItems().length > 0 && !existingFilter) {
-      createUI();
-    } else if (!currentTab && existingFilter) {
-      existingFilter.remove();
+    try {
+      const currentGtmDoc = findGTMDoc();
+      if (!currentGtmDoc) return;
+      
+      const currentTab = detectCurrentTab();
+      const existingFilters = currentGtmDoc.querySelectorAll('[id^="stape-filter"]');
+      const currentTabFilter = currentGtmDoc.getElementById(`stape-filter-${currentTab}`);
+      const items = getItems();
+      
+      if (!filtersEnabled) {
+        existingFilters.forEach(filter => filter.remove());
+        return;
+      }
+      
+      if (currentTab && !currentTabFilter) {
+        createUI();
+      } else if (currentTab && currentTabFilter) {
+        const currentTypes = getTypes();
+        const existingTypes = Array.from(currentTabFilter.querySelectorAll('input[type="checkbox"]')).map(cb => cb.value);
+        
+        const typesChanged = currentTypes.length !== existingTypes.length || 
+                           !currentTypes.every(([type]) => existingTypes.includes(type));
+        
+        if (typesChanged) {
+          currentTabFilter.remove();
+          createUI();
+        }
+      } else if (!currentTab && existingFilters.length > 0) {
+        existingFilters.forEach(filter => filter.remove());
+      }
+    } catch (error) {
     }
   };
 
-  const observer = new MutationObserver(() => {
-    checkAndUpdateFilter();
-  });
-  
-  observer.observe(gtmDoc.body, { 
-    childList: true, 
-    subtree: true, 
-    attributes: true, 
-    attributeFilter: ['class'] 
-  });
+  const startMonitoring = () => {
+    if (observer) return;
+    
+    observer = new MutationObserver(() => {
+      checkAndUpdateFilter();
+    });
+    
+    observer.observe(document.body, { 
+      childList: true, 
+      subtree: true, 
+      attributes: true, 
+      attributeFilter: ['class'] 
+    });
+  };
 
-  setInterval(() => {
-    checkAndUpdateFilter();
-  }, 1000);
+  const stopMonitoring = () => {
+    if (observer) {
+      observer.disconnect();
+      observer = null;
+    }
+    
+    const currentGtmDoc = findGTMDoc();
+    if (currentGtmDoc) {
+      const existingFilters = currentGtmDoc.querySelectorAll('[id^="stape-filter"]');
+      existingFilters.forEach(filter => filter.remove());
+    }
+  };
+
+  window.__stape_extension.previewUIFilters = {
+    start: function() {
+      filtersEnabled = true;
+      startMonitoring();
+      checkAndUpdateFilter();
+    },
+    stop: function() {
+      filtersEnabled = false;
+      stopMonitoring();
+    }
+  };
+
+  if (isEnabled) {
+    startMonitoring();
+  }
 }
