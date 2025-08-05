@@ -16,19 +16,31 @@ const GTM_RULES = {
   // GTMTASS requires window variable check, not just URL
 };
 
+
+
+
 export default defineBackground(() => {
   (async () => {
+    const defaultSettings = {
+      features: [
+          {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
+          {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
+          {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
+          {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
+          {id: 'preview-ui-filtering', name: 'Entities Filter', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
+          {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
+        ]
+    };
+    // Reset Settings on Install/Update
+    browser.runtime.onInstalled.addListener(async(details) => {
+      if (details.reason === "install" || details.reason === "update") {
+        await storage.removeMeta('local:settingsDEV');  
+        await storage.setMeta('local:settingsDEV', defaultSettings)          
+      }
+    });    
     const settings = await storage.getMeta('local:settingsDEV')
     if(!settings.features){
-      settings.features = [
-        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
-        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
-        {id: 'preview-ui-filtering', name: 'Entities Filter', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
-        {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
-      ];      
-      await storage.setMeta('local:settingsDEV', settings)
+      await storage.setMeta('local:settingsDEV', defaultSettings)          
     }    
   })();
    
