@@ -7,6 +7,17 @@ import { showStapeContainerId } from "../scripts/showStapeContainerId.js";
 import { previewUIFilters } from "../scripts/previewUIFilters.js";
 import { jsonFormatter } from "../scripts/jsonFormatter.js";
 import { storage } from '@wxt-dev/storage';
+import { FEATURE_MAPPING_WITH_SCRIPTS } from '../shared/featureMapping.js';
+
+// Add script functions to the mapping
+const FEATURE_MAPPING_WITH_SCRIPTS_WITH_SCRIPTS = {
+  'urls-formatter': { ...FEATURE_MAPPING_WITH_SCRIPTS['urls-formatter'], scriptFunction: urlBlockParser },
+  'tags-status-coloring': { ...FEATURE_MAPPING_WITH_SCRIPTS['tags-status-coloring'], scriptFunction: tagStatusColoring },
+  'tags-type-coloring': { ...FEATURE_MAPPING_WITH_SCRIPTS['tags-type-coloring'], scriptFunction: tagTypeColoring },
+  'consent-status-monitor': { ...FEATURE_MAPPING_WITH_SCRIPTS['consent-status-monitor'], scriptFunction: consentStatusMonitor },
+  'preview-ui-filtering': { ...FEATURE_MAPPING_WITH_SCRIPTS['preview-ui-filtering'], scriptFunction: previewUIFilters },
+  'inline-json-formatting': { ...FEATURE_MAPPING_WITH_SCRIPTS['inline-json-formatting'], scriptFunction: jsonFormatter }
+};
 
 
 // GTM environment detection rules
@@ -21,12 +32,12 @@ export default defineBackground(() => {
     const settings = await storage.getMeta('local:settingsDEV')
     if(!settings.features){
       settings.features = [
-        {id: 'urls-formatter', name: 'URLs Formatter Mode', description: 'Pretty Prints Requests URLs', environments: ["GTMTASS"], enabled: true, order: 0, apiCommand: 'urlBlocksParser'},
-        {id: 'tags-status-coloring', name: 'Tags Status Coloring', description: 'Highlight Tags By The Firing State', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1, apiCommand: 'tagStatusColoring'},
-        {id: 'tags-type-coloring', name: 'Tags Type Coloring', description: 'Highlight Tags By Their Type', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2 , apiCommand: 'tagTypeColoring'},
-        {id: 'consent-status-monitor', name: 'Consent Mode Server Side', description: 'Show current consent mode on Server Side Requests', environments: ["GTMTASS"], enabled: true, order: 3 , apiCommand: 'consentStatusMonitor'},
-        {id: 'preview-ui-filtering', name: 'Tags/Vars Filters', description: 'Find and filter tags and variables', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4 , apiCommand: 'previewUIFilters'},
-        {id: 'inline-json-formatting', name: 'JSON Formatting', description: 'Automatically format JSON in debug table cells with syntax highlighting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5 , apiCommand: 'jsonFormatterInline'}                        
+        {id: 'urls-formatter', environments: ["GTMTASS"], enabled: true, order: 0},
+        {id: 'tags-status-coloring', environments: ["GTMTA","GTMTASS"], enabled: true, order: 1},
+        {id: 'tags-type-coloring', environments: ["GTMTA","GTMTASS"], enabled: true, order: 2},
+        {id: 'consent-status-monitor', environments: ["GTMTASS"], enabled: true, order: 3},
+        {id: 'preview-ui-filtering', environments: ["GTMTA","GTMTASS"], enabled: true, order: 4},
+        {id: 'inline-json-formatting', environments: ["GTMTA","GTMTASS"], enabled: true, order: 5}                        
       ];      
       await storage.setMeta('local:settingsDEV', settings)
     }    
@@ -73,34 +84,25 @@ export default defineBackground(() => {
         
         if (settings?.features && Array.isArray(settings.features)) {
           settings.features.forEach(feature => {
-            featureStates[feature.apiCommand] = feature.enabled;
+            const mapping = FEATURE_MAPPING_WITH_SCRIPTS[feature.id];
+            if (mapping) {
+              featureStates[mapping.apiCommand] = feature.enabled;
+            }
           });
         } else {
           // Fallback: if no settings found, enable all features by default
-          featureStates.urlBlocksParser = true;
-          featureStates.tagStatusColoring = true;
-          featureStates.tagTypeColoring = true;
-          featureStates.consentStatusMonitor = true;
-          featureStates.previewUIFilters = true;
-          featureStates.jsonFormatterInline = true;
+          Object.values(FEATURE_MAPPING_WITH_SCRIPTS).forEach(mapping => {
+            featureStates[mapping.apiCommand] = true;
+          });
         }
         
-
-        // Create script function mapping
-        const scriptMapping = {
-          'urlBlocksParser': urlBlockParser,
-          'tagStatusColoring': tagStatusColoring,
-          'tagTypeColoring': tagTypeColoring,
-          'consentStatusMonitor': consentStatusMonitor,
-          'previewUIFilters': previewUIFilters,
-          'jsonFormatterInline': jsonFormatter
-        };
 
         // Inject scripts based on feature configuration
         if (settings?.features && Array.isArray(settings.features)) {
           for (const feature of settings.features) {
-            if (feature.environments.includes(isGTMEnv.environment) && scriptMapping[feature.apiCommand]) {
-              await injectScript(details.tabId, scriptMapping[feature.apiCommand], featureStates[feature.apiCommand]);
+            const mapping = FEATURE_MAPPING_WITH_SCRIPTS[feature.id];
+            if (mapping && feature.environments.includes(isGTMEnv.environment)) {
+              await injectScript(details.tabId, mapping.scriptFunction, featureStates[mapping.apiCommand]);
             }
           }
         }

@@ -75,42 +75,59 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, computed } from 'vue'
 import { storage } from '@wxt-dev/storage';
 import { sendMessage } from 'webext-bridge/popup';
+import { FEATURE_MAPPING } from '../../shared/featureMapping.js';
 
 
 
 
 const compactMode = ref(true)
 
-const features = ref([])
+const rawFeatures = ref([])
+
+// Computed property that merges storage data with UI mapping
+const features = computed(() => {
+  return rawFeatures.value.map(feature => {
+    const mapping = FEATURE_MAPPING[feature.id];
+    if (mapping) {
+      return {
+        ...feature,
+        name: mapping.name,
+        description: mapping.description,
+        apiCommand: mapping.apiCommand
+      };
+    }
+    return feature;
+  }).sort((a, b) => a.order - b.order);
+})
 
 const toggleFeature = async (featureId) => {
-  if (!Array.isArray(features.value)) {
+  if (!Array.isArray(rawFeatures.value)) {
     return;
   }
   
-  const feature = features.value.find(f => f.id === featureId)
+  const rawFeature = rawFeatures.value.find(f => f.id === featureId)
 
-  if (feature) {
-    feature.enabled = !feature.enabled
+  if (rawFeature) {
+    rawFeature.enabled = !rawFeature.enabled
     
-    // Save updated settings to storage
+    // Save updated settings to storage (only the essential data)
     try {
       const settings = await storage.getMeta('local:settingsDEV')
-      // Ensure we save a plain array, not a reactive reference
-      settings.features = JSON.parse(JSON.stringify(features.value))
+      settings.features = JSON.parse(JSON.stringify(rawFeatures.value))
       await storage.setMeta('local:settingsDEV', settings)
     } catch (error) {
     }
     
-    // Send command to content script
-    if (feature.apiCommand) {
+    // Send command to content script using the mapping
+    const mapping = FEATURE_MAPPING[featureId];
+    if (mapping && mapping.apiCommand) {
       try {
-        const action = feature.enabled ? 'start' : 'stop'
+        const action = rawFeature.enabled ? 'start' : 'stop'
         await sendMessage('EXECUTE_SCRIPT', {
-          command: feature.apiCommand,
+          command: mapping.apiCommand,
           action: action
         }, 'background')
       } catch (error) {
@@ -162,10 +179,10 @@ onMounted(async()=>{
     const settings = await storage.getMeta('local:settingsDEV')
     const loadedFeatures = settings?.features || [];
     // Ensure we have a proper array
-    features.value = Array.isArray(loadedFeatures) ? loadedFeatures : [];
+    rawFeatures.value = Array.isArray(loadedFeatures) ? loadedFeatures : [];
   } catch (error) {
     console.error('Failed to load features from storage:', error);
-    features.value = [];
+    rawFeatures.value = [];
   }
 })
 </script>
