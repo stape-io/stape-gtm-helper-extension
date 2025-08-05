@@ -1,5 +1,5 @@
 export function previewUIFilters(isEnabled = true) {
-  return;
+  console.log("STARTING previewUIFilters")
   if (!isEnabled) return;
 
   const findGTMDoc = () => {
@@ -180,7 +180,7 @@ export function previewUIFilters(isEnabled = true) {
         }
       </style>
       <div class="stape-header">
-        <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel} Filters</div>
+        <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel}s Filter</div>
         <div style="display: flex; align-items: center; gap: 10px;">
           <div class="stape-toggle ${isCollapsed ? 'collapsed' : ''}">▲</div>
         </div>
