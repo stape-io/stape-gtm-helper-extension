@@ -291,14 +291,14 @@ export function previewUIFilters(isEnabled = true) {
         applyFilters();
       });
     }
-
+    // 1h, intentando averiguar por que no se desmarca esto al clicker en el label ... Si que se lanza que se vuelva a acivar ( sigh )
     container.querySelectorAll('.stape-type').forEach(typeDiv => {
-      const checkbox = typeDiv.querySelector('input[type="checkbox"]');
-      
+  
+      const checkbox = typeDiv.querySelector('input[type="checkbox"]');      
       typeDiv.addEventListener('click', (e) => {
-        if (e.target !== checkbox) {
+        if(!["INPUT", "LABEL"].includes(e.target.tagName)){
           checkbox.checked = !checkbox.checked;
-        }
+        }        
         selectedTypes = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
           .map(cb => cb.value);
         applyFilters();
