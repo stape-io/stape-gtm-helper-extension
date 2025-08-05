@@ -22,18 +22,18 @@
     "@tailwindcss/vite": "^4.1.11",
     "@wxt-dev/storage": "^1.1.1",
     "tailwindcss": "^4.1.11",
-    "vue": "^3.5.17",
+    "vue": "^3.5.18",
     "webext-bridge": "^6.0.1"
   },
   "devDependencies": {
     "@wxt-dev/module-vue": "^1.0.2",
-    "@typescript-eslint/eslint-plugin": "^8.37.0",
-    "@typescript-eslint/parser": "^8.37.0",
-    "eslint": "^9.31.0",
-    "eslint-plugin-vue": "^10.3.0",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-vue": "^10.4.0",
     "prettier": "^3.6.2",
-    "typescript": "5.8.3",
-    "vue-tsc": "^3.0.3",
+    "typescript": "5.9.2",
+    "vue-tsc": "^3.0.5",
     "wxt": "^0.20.7"
   }
 }
