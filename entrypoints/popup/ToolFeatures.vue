@@ -163,7 +163,6 @@ onMounted(async()=>{
     const loadedFeatures = settings?.features || [];
     // Ensure we have a proper array
     features.value = Array.isArray(loadedFeatures) ? loadedFeatures : [];
-    console.log('Features loaded:', features.value);
   } catch (error) {
     console.error('Failed to load features from storage:', error);
     features.value = [];

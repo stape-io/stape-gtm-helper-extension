@@ -1,11 +1,9 @@
 export function consentStatusMonitor(isEnabled = true) {
-  console.log("STAPE GTM HELPER: Starting Consent Status Monitor", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   
   function ConsentStatusMonitor() {
     const stylesId = 'consent-status-monitor-styles';
     
-    // Consent mappings for different gcs values (ad_storage, analytics_storage, ad_user_data, ad_personalization)
     const consentMappings = {
       'g100': ['granted', 'granted', 'granted', 'granted'],
       'g111': ['granted', 'granted', 'denied', 'denied'],
@@ -53,7 +51,6 @@ export function consentStatusMonitor(isEnabled = true) {
     };
 
     monitor.findSelectedRequest = function() {
-      // Try multiple selectors to find the selected request
       const selectors = [
         ".message-list__group .message-list__row--child-selected .wd-debug-message-title",
         ".message-list__row--child-selected .wd-debug-message-title",
@@ -125,17 +122,14 @@ export function consentStatusMonitor(isEnabled = true) {
     monitor.showConsentTable = function(gcsValue) {
       const insertTarget = document.querySelector(".blg-card-tabs");
       if (!insertTarget) {
-        console.log('Consent Monitor - No insertion target found');
         return false;
       }
 
-      // Remove existing table
       monitor.hideConsentTable();
 
       const tableHTML = monitor.createConsentTable(gcsValue);
       insertTarget.insertAdjacentHTML('afterend', tableHTML);
       
-      console.log(`Consent Monitor - Showed consent table for GCS: ${gcsValue}`);
       return true;
     };
 
@@ -143,7 +137,6 @@ export function consentStatusMonitor(isEnabled = true) {
       const existingTable = document.querySelector('.gtm-debug-consent-table');
       if (existingTable) {
         existingTable.remove();
-        console.log('Consent Monitor - Removed consent table');
       }
     };
 
@@ -153,9 +146,7 @@ export function consentStatusMonitor(isEnabled = true) {
       const currentTitle = monitor.findSelectedRequest();
       const gcsValue = currentTitle ? monitor.extractGcsValue(currentTitle) : null;
       
-      // Only update if GCS value changed
       if (gcsValue !== monitor.currentGcsValue) {
-        console.log(`Consent Monitor - GCS changed from ${monitor.currentGcsValue} to ${gcsValue}`);
         monitor.currentGcsValue = gcsValue;
         
         if (gcsValue) {
@@ -168,27 +159,21 @@ export function consentStatusMonitor(isEnabled = true) {
 
     monitor.start = function() {
       if (monitor.isActive) {
-        console.log('Consent Monitor - Already active');
         return;
       }
       
-      console.log('Consent Monitor - Starting');
       monitor.isActive = true;
       monitor.currentGcsValue = null;
       
       monitor.injectStyles();
       
-      // Check immediately
       monitor.checkCurrentState();
       
-      // Set up periodic checking
       monitor.checkInterval = setInterval(() => {
         monitor.checkCurrentState();
       }, 500);
       
-      // Set up DOM observer for changes
       monitor.observer = new MutationObserver(() => {
-        // Debounced check
         clearTimeout(monitor.debounceTimer);
         monitor.debounceTimer = setTimeout(() => {
           monitor.checkCurrentState();
@@ -202,16 +187,13 @@ export function consentStatusMonitor(isEnabled = true) {
         attributeFilter: ['class', 'title']
       });
       
-      console.log('Consent Monitor - Started with periodic checking');
     };
 
     monitor.stop = function() {
       if (!monitor.isActive) {
-        console.log('Consent Monitor - Not active');
         return;
       }
       
-      console.log('Consent Monitor - Stopping');
       monitor.isActive = false;
       monitor.currentGcsValue = null;
       
@@ -232,24 +214,18 @@ export function consentStatusMonitor(isEnabled = true) {
       
       monitor.hideConsentTable();
       
-      // Remove styles
       const styleEl = document.getElementById(stylesId);
       if (styleEl) styleEl.remove();
       
-      console.log('Consent Monitor - Stopped');
     };
 
     return monitor;
   }
 
-  // Initialize
   window.__stape_extension.consentStatusMonitor = ConsentStatusMonitor();
 
-  // Auto-start based on enabled state
   if (isEnabled) {
-    console.log('STAPE: Consent Status Monitor auto-starting (feature is enabled)');
     window.__stape_extension.consentStatusMonitor.start();
   } else {
-    console.log('STAPE: Consent Status Monitor not auto-starting (feature is disabled)');
   }
 }

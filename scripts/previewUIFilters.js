@@ -2,14 +2,11 @@ export function previewUIFilters(isEnabled = true) {
   return;
   if (!isEnabled) return;
 
-  // Find GTM preview document
   const findGTMDoc = () => {
-    // Check if we're already in GTM preview
     if (document.querySelector('tags-tab') || document.querySelector('variables-tab')) {
       return document;
     }
     
-    // Look in iframes
     const frames = document.querySelectorAll('iframe');
     for (const frame of frames) {
       try {
@@ -34,57 +31,34 @@ export function previewUIFilters(isEnabled = true) {
   let searchQuery = '';
   let isCollapsed = true;
 
-  // Detect current tab type
   const detectCurrentTab = () => {
-    // Debug: Show all tab-related elements
     const allTabs = gtmDoc.querySelectorAll('.blg-card-tabs *');
     const selectedTabs = gtmDoc.querySelectorAll('.header__tab--selected');
     const allTabElements = gtmDoc.querySelectorAll('[class*="tab"]');
     
-    console.log('STAPE: Debug DOM:', {
-      allTabsCount: allTabs.length,
-      selectedTabsCount: selectedTabs.length,
-      allTabElementsCount: allTabElements.length,
-      bodyHTML: gtmDoc.body.innerHTML.substring(0, 500)
-    });
     
-    // Show first 5 selected tabs
     selectedTabs.forEach((tab, i) => {
       if (i < 5) {
-        console.log(`STAPE: Selected tab ${i}:`, {
-          className: tab.className,
-          innerHTML: tab.innerHTML.substring(0, 100),
-          onclick: tab.getAttribute('data-ng-click')
-        });
       }
     });
     
-    // Only show tag filters when Tags tab is selected
     const tagsTabSelected = gtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.TAGS)"]');
     
-    // Only show variable filters when Variables tab is selected  
+  
     const variablesTabSelected = gtmDoc.querySelector('.blg-card-tabs .header__tab--selected[data-ng-click="ctrl.selectTab(Tab.VARIABLES)"]');
     
-    console.log('STAPE: Tab detection:', {
-      tagsTabSelected: !!tagsTabSelected,
-      variablesTabSelected: !!variablesTabSelected
-    });
     
     if (tagsTabSelected && gtmDoc.querySelector('.tags-tab__tag.gtm-debug-card')) {
-      console.log('STAPE: Showing tags filter');
       return 'tags';
     }
     
     if (variablesTabSelected && gtmDoc.querySelector('.gtm-debug-variable-table-row')) {
-      console.log('STAPE: Showing variables filter');
       return 'variables';
     }
     
-    console.log('STAPE: No active tab detected');
     return null;
   };
 
-  // Get items based on current tab
   const getItems = () => {
     const currentTab = detectCurrentTab();
     if (currentTab === 'tags') {
@@ -106,12 +80,10 @@ export function previewUIFilters(isEnabled = true) {
         const subtitleEl = item.querySelector('.gtm-debug-card__subtitle');
         if (subtitleEl) {
           type = subtitleEl.textContent.trim();
-          // Remove " - Paused" suffix if present
           const dashIndex = type.indexOf(' - ');
           if (dashIndex !== -1) type = type.substring(0, dashIndex).trim();
         }
       } else if (currentTab === 'variables') {
-        // For variables, get type from the second column
         const typeCells = item.querySelectorAll('.gtm-debug-table-cell');
         if (typeCells.length > 1) {
           type = typeCells[1].textContent.trim();
@@ -124,11 +96,9 @@ export function previewUIFilters(isEnabled = true) {
     });
     
     const result = Array.from(typeCount.entries()).sort((a, b) => b[1] - a[1]);
-    console.log(`STAPE: ${currentTab} types found:`, result);
     return result;
   };
 
-  // Create simple UI
   const createUI = () => {
     if (gtmDoc.getElementById('stape-filter')) return;
 
@@ -237,13 +207,10 @@ export function previewUIFilters(isEnabled = true) {
 
     gtmDoc.body.appendChild(container);
 
-    // Event listeners
     const header = container.querySelector('.stape-header');
     const closeBtn = container.querySelector('.stape-close');
     
-    // Toggle collapse on header click
     header.addEventListener('click', (e) => {
-      // Don't collapse if clicking the close button
       if (e.target === closeBtn) return;
       
       isCollapsed = !isCollapsed;
@@ -254,19 +221,16 @@ export function previewUIFilters(isEnabled = true) {
       toggle.classList.toggle('collapsed', isCollapsed);
     });
 
-    // Close button
     closeBtn.addEventListener('click', (e) => {
       e.stopPropagation();
       container.remove();
     });
 
-    // Search input
     gtmDoc.getElementById('stape-search').addEventListener('input', (e) => {
       searchQuery = e.target.value.toLowerCase();
       applyFilters();
     });
 
-    // Checkboxes
     container.querySelectorAll('input[type="checkbox"]').forEach(cb => {
       cb.addEventListener('change', () => {
         selectedTypes = Array.from(container.querySelectorAll('input[type="checkbox"]:checked'))
@@ -276,7 +240,7 @@ export function previewUIFilters(isEnabled = true) {
     });
   };
 
-  // Apply filters 
+ 
   const applyFilters = () => {
     const currentTab = detectCurrentTab();
     
@@ -284,7 +248,6 @@ export function previewUIFilters(isEnabled = true) {
       let visible = true;
       let type = '';
 
-      // Get type based on tab
       if (currentTab === 'tags') {
         const subtitleEl = item.querySelector('.gtm-debug-card__subtitle');
         if (subtitleEl) {
@@ -299,12 +262,10 @@ export function previewUIFilters(isEnabled = true) {
         }
       }
 
-      // Type filter
       if (selectedTypes.length > 0) {
         visible = selectedTypes.includes(type);
       }
 
-      // Search filter
       if (searchQuery && visible) {
         const text = item.textContent.toLowerCase();
         visible = text.includes(searchQuery);
@@ -314,26 +275,20 @@ export function previewUIFilters(isEnabled = true) {
     });
   };
 
-  // Initialize
   createUI();
 
-  // Check and update filter visibility
   const checkAndUpdateFilter = () => {
     const currentTab = detectCurrentTab();
     const existingFilter = gtmDoc.getElementById('stape-filter');
     
-    console.log('STAPE: checkAndUpdateFilter - currentTab:', currentTab, 'existingFilter:', !!existingFilter);
     
     if (currentTab && getItems().length > 0 && !existingFilter) {
-      console.log('STAPE: Creating filter for tab:', currentTab);
       createUI();
     } else if (!currentTab && existingFilter) {
-      console.log('STAPE: Removing filter - no active tab');
       existingFilter.remove();
     }
   };
 
-  // Auto-refresh when DOM changes
   const observer = new MutationObserver(() => {
     checkAndUpdateFilter();
   });
@@ -345,9 +300,7 @@ export function previewUIFilters(isEnabled = true) {
     attributeFilter: ['class'] 
   });
 
-  // Also check every second as backup
   setInterval(() => {
-    console.log('STAPE: Manual check triggered');
     checkAndUpdateFilter();
   }, 1000);
 }

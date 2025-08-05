@@ -65,22 +65,18 @@ export default defineBackground(() => {
         try {
           settings = await storage.getMeta('local:settingsDEV');
         } catch (error) {
-          console.log('STAPE: Error reading settings:', error);
           settings = null;
         }
         
         const featureStates = {};
         
-        console.log('STAPE: Loading settings from storage:', settings);
         
         if (settings?.features && Array.isArray(settings.features)) {
           settings.features.forEach(feature => {
             featureStates[feature.apiCommand] = feature.enabled;
-            console.log(`STAPE: Feature ${feature.apiCommand} -> ${feature.enabled}`);
           });
         } else {
           // Fallback: if no settings found, enable all features by default
-          console.log('STAPE: No settings found, using fallback enabled states');
           featureStates.urlBlocksParser = true;
           featureStates.tagStatusColoring = true;
           featureStates.tagTypeColoring = true;
@@ -89,7 +85,6 @@ export default defineBackground(() => {
           featureStates.jsonFormatterInline = true;
         }
         
-        console.log('STAPE: Final feature states:', featureStates);
 
         // Create script function mapping
         const scriptMapping = {
@@ -106,7 +101,6 @@ export default defineBackground(() => {
           for (const feature of settings.features) {
             if (feature.environments.includes(isGTMEnv.environment) && scriptMapping[feature.apiCommand]) {
               await injectScript(details.tabId, scriptMapping[feature.apiCommand], featureStates[feature.apiCommand]);
-              console.log(`STAPE: Injected ${feature.apiCommand} for ${isGTMEnv.environment}`);
             }
           }
         }
@@ -114,7 +108,6 @@ export default defineBackground(() => {
         // Always inject showStapeContainerId for GTMTASS (not configurable)
         if (isGTMEnv?.environment === "GTMTASS") {
           await injectScript(details.tabId, showStapeContainerId, true);
-          console.log('STAPE: Injected showStapeContainerId for GTMTASS');
         }                
       }
     }
@@ -133,7 +126,6 @@ export default defineBackground(() => {
         });
       } catch (error) {
         // Fallback for Firefox
-        console.log('Falling back to basic injection with state');
         await browser.scripting.executeScript({
           target: { tabId },
           func: scriptFunc,
@@ -141,7 +133,6 @@ export default defineBackground(() => {
         });
       }
     } catch (error) {
-      console.log(`STAPE:ERROR Failed to inject script with state on tab ${tabId}:`, error);
     }
   }
 
@@ -181,7 +172,6 @@ export default defineBackground(() => {
 
   browser.tabs.onRemoved.addListener((tabId) => {
     if (tabStatus.has(tabId)) {
-      console.log(`Tab ${tabId} closed, removing from tracking`);
       tabStatus.delete(tabId);
       injectedTabs.delete(tabId);
     }
@@ -204,12 +194,11 @@ export default defineBackground(() => {
       
       if (tabs[0]) {
         const { command, action } = details.data;
-        console.log("TOGGLE FEATURE", details.data);        
+        
         try {
           await browser.scripting.executeScript({
             target: { tabId: tabs[0].id },
             func: (command, action) => {
-              console.log("DAVID", command, action)
               if (window.__stape_extension && window.__stape_extension[command]) {
                 window.__stape_extension[command][action]();
               }

@@ -1,5 +1,4 @@
 export function urlBlockParser(isEnabled = true) {
-  console.log("STAPE GTM HELPER: Starting URL Blocks Parser", { isEnabled })
   window.__stape_extension = window.__stape_extension || {};
   function HTTPUrlDetailsMonitor() {
     const monitor = {
@@ -43,10 +42,7 @@ export function urlBlockParser(isEnabled = true) {
     }
 
     monitor.syntaxHighlightJSON = function(json) {
-      // Escape HTML to prevent XSS
       json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      
-      // Use a single comprehensive regex to tokenize and highlight
       return json.replace(
         /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
         function(match, key, string, number, boolean, nullValue, brace, bracket, comma) {
@@ -85,14 +81,13 @@ export function urlBlockParser(isEnabled = true) {
         font-size: 13px;
       `;
 
-      // Header with method and buttons
       const header = document.createElement('div');
       header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
       
       const methodSpan = document.createElement('span');
 
       let parsedUrl;
-      if(url.startsWith('http')){  // Fixed: startsWith instead of startWith, and 'http' instead of 'hhttp'
+      if(url.startsWith('http')){
           parsedUrl = url.replace(/^https?:\/\//, '').split('?')[0];
       } else {
           parsedUrl = document.location.hostname + url.replace(/^https?:\/\//, '').split('?')[0];
@@ -132,7 +127,6 @@ export function urlBlockParser(isEnabled = true) {
       header.appendChild(methodSpan);
       header.appendChild(buttonGroup);
 
-      // Parameters table
       const tableContainer = document.createElement('div');
       tableContainer.className = 'table-content';
       
@@ -148,7 +142,6 @@ export function urlBlockParser(isEnabled = true) {
           box-shadow: 0 1px 3px rgba(0,0,0,0.1);
         `;
 
-        // Table header
         const thead = document.createElement('thead');
         thead.innerHTML = `
           <tr style="background: #e9ecef;">
@@ -158,7 +151,6 @@ export function urlBlockParser(isEnabled = true) {
         `;
         table.appendChild(thead);
 
-        // Table body
         const tbody = document.createElement('tbody');
         Object.entries(params).forEach(([key, value], index) => {
           const row = document.createElement('tr');
@@ -167,7 +159,6 @@ export function urlBlockParser(isEnabled = true) {
             border-bottom: 1px solid #dee2e6;
           `;
           
-          // Truncate long values
           let displayValue = String(value);
           if (String(value).length > 80) {
             displayValue = String(value).substring(0, 80) + '...';
@@ -186,7 +177,6 @@ export function urlBlockParser(isEnabled = true) {
         tableContainer.innerHTML = '<div style="color: #6c757d; text-align: center; padding: 20px;">No parameters found</div>';
       }
 
-      // Object view container
       const objectContainer = document.createElement('div');
       objectContainer.className = 'object-content';
       objectContainer.style.cssText = 'display: none;';
@@ -209,7 +199,6 @@ export function urlBlockParser(isEnabled = true) {
         position: relative;
       `;
 
-      // Create formatted object string
       const objectData = {
         method: method,
         protocol: monitor.getProtocol(url),
@@ -218,15 +207,12 @@ export function urlBlockParser(isEnabled = true) {
         searchParams: params || {}
       };
 
-      // Create syntax highlighted JSON
       const jsonString = JSON.stringify(objectData, null, 2);
       objectPre.innerHTML = monitor.syntaxHighlightJSON(jsonString);
       objectContainer.appendChild(objectPre);
 
-      // View state management
-      let currentView = 'table'; // 'table' or 'json'
+      let currentView = 'table';
       
-      // Add JSON syntax highlighting styles only once
       if (!document.getElementById('stape-json-styles')) {
         const style = document.createElement('style');
         style.id = 'stape-json-styles';
@@ -264,7 +250,6 @@ export function urlBlockParser(isEnabled = true) {
         `;
         document.head.appendChild(style);
       }
-      // Copy functionality - always as JSON
       const copyToClipboard = () => {
         const objectData = {
           method: method,
@@ -295,17 +280,14 @@ export function urlBlockParser(isEnabled = true) {
         });
       };
 
-      // Toggle button functionality
       toggleBtn.onclick = () => {
         if (currentView === 'table') {
-          // Switch to JSON view
           tableContainer.style.display = 'none';
           objectContainer.style.display = 'block';
           toggleBtn.textContent = 'View as Table';
           toggleBtn.style.background = '#6c757d';
           currentView = 'json';
         } else {
-          // Switch to table view
           tableContainer.style.display = 'block';
           objectContainer.style.display = 'none';
           toggleBtn.textContent = 'View as JSON';
@@ -323,7 +305,6 @@ export function urlBlockParser(isEnabled = true) {
       return container;
     }
 
-    // Process and enhance http-url-details components
     monitor.enhanceComponent = function(component) {
       const componentId = monitor.getComponentId(component);
       
@@ -340,7 +321,6 @@ export function urlBlockParser(isEnabled = true) {
       if (urlPre && info.url) {
         const params = monitor.parseUrlParameters(info.url);
         
-        // Hide the entire method cell and the URL pre element
         if (methodCell) methodCell.style.display = 'none';
         urlPre.style.display = 'none';
         
@@ -362,7 +342,6 @@ export function urlBlockParser(isEnabled = true) {
       return info;
     }
 
-    // Extract HTTP request info from component
     monitor.extractHttpUrlInfo = function(component) {
       const info = {
         component: component,
@@ -386,7 +365,6 @@ export function urlBlockParser(isEnabled = true) {
     };
 
     monitor.getComponentId = function(component) {
-      // Use the element itself as a unique identifier
       if (!component.hasAttribute('data-stape-id')) {
         component.setAttribute('data-stape-id', `stape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
       }
@@ -399,7 +377,6 @@ export function urlBlockParser(isEnabled = true) {
         const currentComponents = document.querySelectorAll('http-url-details');
         const newComponents = [];
 
-        // Clean up tracking for components no longer in DOM
         monitor.cleanupRemovedComponents();
 
         currentComponents.forEach((component) => {
@@ -419,7 +396,6 @@ export function urlBlockParser(isEnabled = true) {
       }, 100);
     };
 
-    // Clean up tracking for components that are no longer in the DOM
     monitor.cleanupRemovedComponents = function() {
       const currentComponentIds = new Set();
       document.querySelectorAll('http-url-details[data-stape-id]').forEach(component => {
@@ -427,7 +403,6 @@ export function urlBlockParser(isEnabled = true) {
         if (id) currentComponentIds.add(id);
       });
 
-      // Remove tracking for components no longer in DOM
       for (const [componentId] of monitor.parsedComponents) {
         if (!currentComponentIds.has(componentId)) {
           monitor.parsedComponents.delete(componentId);
@@ -436,19 +411,15 @@ export function urlBlockParser(isEnabled = true) {
       }
     };
 
-    // Start monitoring
     monitor.start = function() {
-      // Clear caches to ensure fresh start
       monitor.detectedComponents.clear();
       monitor.parsedComponents.clear();
       
-      // Process existing components
       monitor.processNewComponents();
 
       monitor.observer = new MutationObserver((mutations) => {
         let shouldProcess = false;
         mutations.forEach((mutation) => {
-          // Check for added nodes
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
@@ -458,7 +429,6 @@ export function urlBlockParser(isEnabled = true) {
             }
           });
           
-          // Check for removed nodes to trigger cleanup
           mutation.removedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
@@ -476,17 +446,14 @@ export function urlBlockParser(isEnabled = true) {
       monitor.observer.observe(document.body, { childList: true, subtree: true });      
     };
 
-    // Stop monitoring and restore all components
     monitor.stop = function() {
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
         if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
         
-        // Automatically restore all components when stopping
         monitor.restoreAll();
         
-        console.log('HTTP Request Monitor stopped and all components restored');
       }
     };
 
@@ -510,45 +477,31 @@ export function urlBlockParser(isEnabled = true) {
     monitor.clearCache = function() {
       monitor.detectedComponents.clear();
       monitor.parsedComponents.clear();
-      console.log('Cache cleared');
     };
 
-    // Restore all components to their original state
     monitor.restoreAll = function() {
       monitor.parsedComponents.forEach(({ originalPre, originalMethodCell, tableDisplay }) => {
-        // Show original elements
         originalPre.style.display = 'block';
         if (originalMethodCell) originalMethodCell.style.display = 'table-cell';
         
-        // Remove the enhanced table display
         if (tableDisplay?.parentNode) {
           tableDisplay.parentNode.removeChild(tableDisplay);
         }
       });
       
       monitor.parsedComponents.clear();
-      console.log('All components restored to original state');
     };
 
     return monitor;
   }
 
-  // Initialize and start
   window.__stape_extension.urlBlocksParser = HTTPUrlDetailsMonitor();
 
   window.__stape_extension.urlBlocksParser.onNewHttpUrlDetails((components) => {
-    console.log(`Enhanced ${components.length} HTTP request(s) with table view`);
-    components.forEach((info, index) => {
-      const paramCount = info.params ? Object.keys(info.params).length : 0;
-      console.log(`Request ${index + 1}: ${info.method} - ${paramCount} parameters`);
-    });
   });
 
-  // Auto-start based on enabled state
   if (isEnabled) {
-    console.log('STAPE: URL Block Parser auto-starting (feature is enabled)');
     window.__stape_extension.urlBlocksParser.start();
   } else {
-    console.log('STAPE: URL Block Parser not auto-starting (feature is disabled)');
   }
 }
