@@ -110,7 +110,7 @@ export function consentStatusMonitor(isEnabled = true) {
         <table class="gtm-debug-consent-table dma-consent-table" style="margin-bottom:1em ">
           <thead>
             <tr class="gtm-debug-table-row">
-              <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://stape.io/favicon.ico" /></th>
+              <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico" /></th>
               <th class="gtm-debug-table-header-cell">On-page Default</th>
               <th class="gtm-debug-table-header-cell">On-page Update</th>
             </tr>
