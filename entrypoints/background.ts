@@ -112,27 +112,32 @@ export default defineBackground(() => {
         if (settings?.features && Array.isArray(settings.features)) {
           for (const feature of settings.features) {
             if (feature.environments.includes(isGTMEnv.environment) && scriptMapping[feature.apiCommand]) {
-              await injectScript(details.tabId, scriptMapping[feature.apiCommand], featureStates[feature.apiCommand]);
+              await injectScript(
+                details.tabId,
+                scriptMapping[feature.apiCommand],
+                featureStates[feature.apiCommand],
+                isGTMEnv.environment
+              );
             }
           }
         }
 
         // Always inject showStapeContainerId for GTMTASS (not configurable)
         if (isGTMEnv?.environment === "GTMTASS") {
-          await injectScript(details.tabId, showStapeContainerId, true);
+          await injectScript(details.tabId, showStapeContainerId, true, isGTMEnv.environment);
         }                
       }
     }
   });
 
   // Inject script with feature state
-  async function injectScript(tabId: number, scriptFunc: Function, isEnabled: boolean) {
+  async function injectScript(tabId: number, scriptFunc: Function, isEnabled: boolean, environment?: string) {
     try {
       try {
         await browser.scripting.executeScript({
           target: { tabId },
           func: scriptFunc,
-          args: [isEnabled],
+          args: [isEnabled, environment],
           injectImmediately: true,
           world: 'MAIN'
         });
@@ -141,7 +146,7 @@ export default defineBackground(() => {
         await browser.scripting.executeScript({
           target: { tabId },
           func: scriptFunc,
-          args: [isEnabled]
+          args: [isEnabled, environment]
         });
       }
     } catch (error) {
