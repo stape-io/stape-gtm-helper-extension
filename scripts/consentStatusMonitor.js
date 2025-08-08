@@ -3,23 +3,22 @@ export function consentStatusMonitor(isEnabled = true) {
   
   function ConsentStatusMonitor() {
     const stylesId = 'consent-status-monitor-styles';
-    
+  
     const consentMappings = {
-      'g100': ['granted', 'granted', 'granted', 'granted'],
-      'g111': ['granted', 'granted', 'denied', 'denied'],
-      'g110': ['granted', 'granted', 'granted', 'denied'],
-      'g101': ['granted', 'granted', 'denied', 'granted'],
-      'g011': ['denied', 'denied', 'denied', 'denied'],
-      'g010': ['denied', 'denied', 'granted', 'denied'],
-      'g001': ['denied', 'denied', 'denied', 'granted'],
-      'g000': ['denied', 'denied', 'denied', 'denied']
+      'g1--': ['-', '-'],
+      'g10-': ['denied', '-'],
+      'g11-': ['granted', '-'],
+      'g1-0': ['-', 'denied'],
+      'g1-1': ['-', 'granted'],
+      'g100': ['denied', 'denied'],
+      'g110': ['granted', 'denied'],
+      'g101': ['denied', 'granted'],
+      'g111': ['granted', 'granted']
     };
 
     const consentTypes = [
       'ad_storage',
-      'analytics_storage',
-      'ad_user_data',
-      'ad_personalization'
+      'analytics_storage'
     ];
 
     const monitor = {
@@ -95,11 +94,6 @@ export function consentStatusMonitor(isEnabled = true) {
                 <div class="consent ${statusClass}">${statusDisplay}</div>
               </div>
             </td>
-            <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
-              <div class="consent-value-cell">
-                <div class="consent ${statusClass}">${statusDisplay}</div>
-              </div>
-            </td>
           </tr>`;
       }).join('');
       
@@ -108,8 +102,7 @@ export function consentStatusMonitor(isEnabled = true) {
           <thead>
             <tr class="gtm-debug-table-row">
               <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico" /></th>
-              <th class="gtm-debug-table-header-cell">On-page Default</th>
-              <th class="gtm-debug-table-header-cell">On-page Update</th>
+              <th class="gtm-debug-table-header-cell">Consent Status</th>
             </tr>
           </thead>
           <tbody>
