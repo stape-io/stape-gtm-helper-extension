@@ -3,6 +3,12 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
   window.__stape_extension = window.__stape_extension || {};
   
+  let selectedTypes = [];
+  let searchQuery = '';
+  let isCollapsed = true;
+  let filtersEnabled = true;
+  let observer = null;
+
   const findGTMDoc = () => {
     if (document.querySelector('tags-tab') || document.querySelector('variables-tab')) {
       return document;
@@ -21,17 +27,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     }
     return null;
   };
-
-  let selectedTypes = [];
-  let searchQuery = '';
-  let isCollapsed = true;
-  let filtersEnabled = true;
-  let observer = null;
-
-  const gtmDoc = findGTMDoc();
-  if (gtmDoc) {
-    createUI();
-  }
 
   const detectCurrentTab = () => {
     const currentGtmDoc = findGTMDoc();
@@ -297,9 +292,8 @@ export function previewUIFilters(isEnabled = true, environment = null) {
           applyFilters();
         });
       }
-      // 1h, intentando averiguar por que no se desmarca esto al clicker en el label ... Si que se lanza que se vuelva a acivar ( sigh )
+
       container.querySelectorAll('.stape-type').forEach(typeDiv => {
-    
         const checkbox = typeDiv.querySelector('input[type="checkbox"]');      
         typeDiv.addEventListener('click', (e) => {
           if(!["INPUT", "LABEL"].includes(e.target.tagName)){
@@ -331,7 +325,12 @@ export function previewUIFilters(isEnabled = true, environment = null) {
           applyFilters();
         });
       }
+
+      searchQuery = '';
+      applyFilters();
     } catch (error) {
+      searchQuery = '';
+      applyFilters();
     }
   };
  
@@ -399,13 +398,12 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       const currentTab = detectCurrentTab();
       const existingFilters = currentGtmDoc.querySelectorAll('[id^="stape-filter"]');
       const currentTabFilter = currentGtmDoc.getElementById(`stape-filter-${currentTab}`);
-      const items = getItems();
-      
+
       if (!filtersEnabled) {
         existingFilters.forEach(filter => filter.remove());
         return;
       }
-      
+
       if (currentTab && !currentTabFilter) {
         createUI();
       } else if (currentTab && currentTabFilter) {
@@ -453,6 +451,11 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       existingFilters.forEach(filter => filter.remove());
     }
   };
+
+  const gtmDoc = findGTMDoc();
+  if (gtmDoc) {
+    createUI();
+  }
 
   window.__stape_extension.previewUIFilters = {
     start: function() {
