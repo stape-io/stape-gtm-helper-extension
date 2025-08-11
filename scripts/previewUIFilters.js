@@ -337,7 +337,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     getItems().forEach(item => {
       item.style.display = '';
     });
-    applyFilters();
   };
  
   const applyFilters = () => {
@@ -453,6 +452,7 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     
     const currentGtmDoc = findGTMDoc();
     if (currentGtmDoc) {
+      resetAllFilters();
       const existingFilters = currentGtmDoc.querySelectorAll('[id^="stape-filter"]');
       existingFilters.forEach(filter => filter.remove());
     }
