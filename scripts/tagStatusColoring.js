@@ -1,6 +1,6 @@
 export function tagStatusColoring(isEnabled = true) {
   window.__stape_extension = window.__stape_extension || {};
-  
+
   function TagStatusColoringMonitor() {
     const vendorStylesId = 'tag-status-coloring-styles';
 
@@ -12,11 +12,11 @@ export function tagStatusColoring(isEnabled = true) {
       coloredComponents: new Map()
     };
 
-    monitor.onNewTagCards = function(callback) {
+    monitor.onNewTagCards = function (callback) {
       monitor.callbacks.push(callback);
     };
 
-    monitor.injectStyles = function() {
+    monitor.injectStyles = function () {
       let styleEl = document.getElementById(vendorStylesId);
       if (styleEl) return;
 
@@ -43,21 +43,24 @@ export function tagStatusColoring(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-    monitor.hasFailedStatus = function(card) {
+    monitor.hasFailedStatus = function (card) {
       const cardText = card.textContent || '';
       return /failed/i.test(cardText);
     };
 
-    monitor.getComponentId = function(component) {
+    monitor.getComponentId = function (component) {
       if (!component.hasAttribute('data-stape-status-coloring-id')) {
-        component.setAttribute('data-stape-status-coloring-id', `stape-status-coloring-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+        component.setAttribute(
+          'data-stape-status-coloring-id',
+          `stape-status-coloring-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+        );
       }
       return component.getAttribute('data-stape-status-coloring-id') || '';
     };
 
-    monitor.enhanceCard = function(card) {
+    monitor.enhanceCard = function (card) {
       const componentId = monitor.getComponentId(card);
-      
+
       if (monitor.coloredComponents.has(componentId)) {
         return null;
       }
@@ -86,7 +89,7 @@ export function tagStatusColoring(isEnabled = true) {
       return info;
     };
 
-    monitor.processNewComponents = function() {
+    monitor.processNewComponents = function () {
       if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
       monitor.debounceTimer = setTimeout(() => {
         const currentComponents = document.querySelectorAll('tags-tab .gtm-debug-card');
@@ -111,12 +114,14 @@ export function tagStatusColoring(isEnabled = true) {
       }, 100);
     };
 
-    monitor.cleanupRemovedComponents = function() {
+    monitor.cleanupRemovedComponents = function () {
       const currentComponentIds = new Set();
-      document.querySelectorAll('tags-tab .gtm-debug-card[data-stape-status-coloring-id]').forEach(component => {
-        const id = component.getAttribute('data-stape-status-coloring-id');
-        if (id) currentComponentIds.add(id);
-      });
+      document
+        .querySelectorAll('tags-tab .gtm-debug-card[data-stape-status-coloring-id]')
+        .forEach((component) => {
+          const id = component.getAttribute('data-stape-status-coloring-id');
+          if (id) currentComponentIds.add(id);
+        });
 
       for (const [componentId] of monitor.coloredComponents) {
         if (!currentComponentIds.has(componentId)) {
@@ -126,10 +131,10 @@ export function tagStatusColoring(isEnabled = true) {
       }
     };
 
-    monitor.start = function() {
+    monitor.start = function () {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
-      
+
       monitor.injectStyles();
       monitor.processNewComponents();
 
@@ -139,16 +144,22 @@ export function tagStatusColoring(isEnabled = true) {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.classList?.contains('gtm-debug-card') || element.querySelector?.('.gtm-debug-card')) {
+              if (
+                element.classList?.contains('gtm-debug-card') ||
+                element.querySelector?.('.gtm-debug-card')
+              ) {
                 shouldProcess = true;
               }
             }
           });
-          
+
           mutation.removedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.classList?.contains('gtm-debug-card') || element.querySelector?.('.gtm-debug-card')) {
+              if (
+                element.classList?.contains('gtm-debug-card') ||
+                element.querySelector?.('.gtm-debug-card')
+              ) {
                 shouldProcess = true;
               }
             }
@@ -162,26 +173,27 @@ export function tagStatusColoring(isEnabled = true) {
       monitor.observer.observe(document.body, { childList: true, subtree: true });
     };
 
-    monitor.stop = function() {
+    monitor.stop = function () {
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
         if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
-        
+
         monitor.restoreAll();
-        
       }
     };
 
-    monitor.executeCallbacks = function(components) {
-      monitor.callbacks.forEach(callback => {
-        try { callback(components); } catch (error) {
+    monitor.executeCallbacks = function (components) {
+      monitor.callbacks.forEach((callback) => {
+        try {
+          callback(components);
+        } catch (error) {
           console.error('Error in callback:', error);
         }
       });
     };
 
-    monitor.getStats = function() {
+    monitor.getStats = function () {
       return {
         totalDetected: monitor.detectedComponents.size,
         totalColored: monitor.coloredComponents.size,
@@ -190,12 +202,12 @@ export function tagStatusColoring(isEnabled = true) {
       };
     };
 
-    monitor.clearCache = function() {
+    monitor.clearCache = function () {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
     };
 
-    monitor.restoreAll = function() {
+    monitor.restoreAll = function () {
       const cards = document.querySelectorAll('tags-tab .gtm-debug-card');
       for (const card of cards) {
         card.classList.remove('stape-status-failed');
@@ -203,7 +215,7 @@ export function tagStatusColoring(isEnabled = true) {
 
       const styleEl = document.getElementById(vendorStylesId);
       if (styleEl) styleEl.remove();
-      
+
       monitor.coloredComponents.clear();
     };
 
@@ -212,8 +224,7 @@ export function tagStatusColoring(isEnabled = true) {
 
   window.__stape_extension.tagStatusColoring = TagStatusColoringMonitor();
 
-  window.__stape_extension.tagStatusColoring.onNewTagCards((components) => {
-  });
+  window.__stape_extension.tagStatusColoring.onNewTagCards((components) => {});
 
   if (isEnabled) {
     window.__stape_extension.tagStatusColoring.start();

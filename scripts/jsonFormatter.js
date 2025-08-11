@@ -1,9 +1,9 @@
 export function jsonFormatter(isEnabled = true) {
   window.__stape_extension = window.__stape_extension || {};
-  
+
   function JsonFormatterMonitor() {
     const stylesId = 'json-formatter-styles';
-    
+
     const monitor = {
       observer: null,
       debounceTimer: null,
@@ -11,7 +11,7 @@ export function jsonFormatter(isEnabled = true) {
       inlineFormattingEnabled: false
     };
 
-    monitor.injectStyles = function() {
+    monitor.injectStyles = function () {
       let styleEl = document.getElementById(stylesId);
       if (styleEl) return;
 
@@ -74,43 +74,41 @@ export function jsonFormatter(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-
-    monitor.findAndFormatJsonCells = function() {
+    monitor.findAndFormatJsonCells = function () {
       if (!monitor.inlineFormattingEnabled) return;
-      
-      const httpBodyCells = document.querySelectorAll('.gtm-debug-table-cell--http-body pre[data-ng-bind="ctrl.getBody()"]');
-      
-      httpBodyCells.forEach(preElement => {
+
+      const httpBodyCells = document.querySelectorAll(
+        '.gtm-debug-table-cell--http-body pre[data-ng-bind="ctrl.getBody()"]'
+      );
+
+      httpBodyCells.forEach((preElement) => {
         if (monitor.processedElements.has(preElement)) return;
-        
+
         const jsonText = preElement.textContent.trim();
         if (!jsonText) return;
-        
+
         try {
           const parsed = JSON.parse(jsonText);
-          
+
           monitor.processedElements.set(preElement, {
             originalContent: preElement.innerHTML,
             originalJson: jsonText
           });
-          
+
           monitor.autoFormatJsonCell(preElement, jsonText);
-          
-          
-        } catch (error) {
-        }
+        } catch (error) {}
       });
     };
 
-    monitor.syntaxHighlightJSON = function(json) {
+    monitor.syntaxHighlightJSON = function (json) {
       if (window.__stape_extension && window.__stape_extension.urlBlocksParser) {
       }
-      
+
       json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      
+
       return json.replace(
         /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
-        function(match, key, string, number, boolean, nullValue, brace, bracket, comma) {
+        function (match, key, string, number, boolean, nullValue, brace, bracket, comma) {
           if (key) {
             return '<span class="json-key">' + key + ':</span>';
           } else if (string) {
@@ -133,100 +131,103 @@ export function jsonFormatter(isEnabled = true) {
       );
     };
 
-    monitor.autoFormatJsonCell = function(preElement, originalJson) {
+    monitor.autoFormatJsonCell = function (preElement, originalJson) {
       try {
         const parsed = JSON.parse(originalJson);
         const formatted = JSON.stringify(parsed, null, 2);
         const highlighted = monitor.syntaxHighlightJSON(formatted);
-        
+
         preElement.innerHTML = highlighted;
         preElement.classList.add('stape-json-formatted');
-        
+
         preElement.style.position = 'relative';
-        
+
         const elementData = monitor.processedElements.get(preElement);
         if (elementData) {
           monitor.addCopyIcon(preElement, elementData.originalJson);
         }
-        
-        
       } catch (error) {
         console.error('STAPE: Error auto-formatting JSON:', error);
       }
     };
 
-    monitor.addCopyIcon = function(preElement, originalJson) {
+    monitor.addCopyIcon = function (preElement, originalJson) {
       if (preElement.querySelector('.stape-json-copy-btn')) return;
-      
+
       const copyBtn = document.createElement('button');
       copyBtn.className = 'stape-json-copy-btn';
       copyBtn.textContent = 'Copy';
       copyBtn.title = 'Copy JSON to clipboard';
-      
+
       const copyToClipboard = () => {
-        navigator.clipboard.writeText(originalJson).then(() => {
-          const originalText = copyBtn.textContent;
-          copyBtn.textContent = 'Copied!';
-          copyBtn.style.background = '#20c997';
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-            copyBtn.style.background = 'rgb(40, 167, 69)';
-          }, 1500);
-        }).catch(err => {
-          console.error('Failed to copy to clipboard:', err);
-          copyBtn.textContent = 'Failed';
-          copyBtn.style.background = '#dc3545';
-          setTimeout(() => {
-            copyBtn.textContent = 'Copy';
-            copyBtn.style.background = 'rgb(40, 167, 69)';
-          }, 1500);
-        });
+        navigator.clipboard
+          .writeText(originalJson)
+          .then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.style.background = '#20c997';
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+              copyBtn.style.background = 'rgb(40, 167, 69)';
+            }, 1500);
+          })
+          .catch((err) => {
+            console.error('Failed to copy to clipboard:', err);
+            copyBtn.textContent = 'Failed';
+            copyBtn.style.background = '#dc3545';
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+              copyBtn.style.background = 'rgb(40, 167, 69)';
+            }, 1500);
+          });
       };
-      
+
       copyBtn.onclick = (e) => {
         e.stopPropagation();
         copyToClipboard();
       };
-      
+
       preElement.appendChild(copyBtn);
     };
 
-    monitor.processNewElements = function() {
+    monitor.processNewElements = function () {
       if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
       monitor.debounceTimer = setTimeout(() => {
         monitor.findAndFormatJsonCells();
       }, 300);
     };
 
-    monitor.startObserver = function() {
+    monitor.startObserver = function () {
       if (monitor.observer) return;
-      
+
       monitor.observer = new MutationObserver((mutations) => {
         let shouldProcess = false;
-        
+
         mutations.forEach((mutation) => {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
-              if (node.classList?.contains('gtm-debug-table-cell--http-body') ||
-                  node.querySelector?.('.gtm-debug-table-cell--http-body')) {
+              if (
+                node.classList?.contains('gtm-debug-table-cell--http-body') ||
+                node.querySelector?.('.gtm-debug-table-cell--http-body')
+              ) {
                 shouldProcess = true;
               }
             }
           });
         });
-        
+
         if (shouldProcess) {
           monitor.processNewElements();
         }
       });
-      
+
       monitor.observer.observe(document.body, {
         childList: true,
         subtree: true
       });
     };
 
-    monitor.enableFormatting = function() {
+    monitor.enableFormatting = function () {
       monitor.inlineFormattingEnabled = true;
       monitor.findAndFormatJsonCells();
       if (!monitor.observer) {
@@ -234,9 +235,9 @@ export function jsonFormatter(isEnabled = true) {
       }
     };
 
-    monitor.disableFormatting = function() {
+    monitor.disableFormatting = function () {
       monitor.inlineFormattingEnabled = false;
-      
+
       monitor.processedElements.forEach((elementData, element) => {
         try {
           if (element && element.parentNode && element.classList && element.style) {
@@ -249,25 +250,23 @@ export function jsonFormatter(isEnabled = true) {
         }
       });
       monitor.processedElements.clear();
-      
     };
 
-    monitor.start = function() {
+    monitor.start = function () {
       monitor.injectStyles();
       monitor.startObserver();
     };
 
-    monitor.stop = function() {
-      
+    monitor.stop = function () {
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
       }
-      
+
       if (monitor.debounceTimer) {
         clearTimeout(monitor.debounceTimer);
       }
-      
+
       monitor.processedElements.forEach((elementData, element) => {
         try {
           if (element && element.parentNode && element.classList && element.style) {
@@ -280,7 +279,7 @@ export function jsonFormatter(isEnabled = true) {
         }
       });
       monitor.processedElements.clear();
-      
+
       try {
         const styleEl = document.getElementById(stylesId);
         if (styleEl && styleEl.parentNode) {
@@ -295,20 +294,20 @@ export function jsonFormatter(isEnabled = true) {
   }
 
   const jsonFormatterMonitor = JsonFormatterMonitor();
-  
+
   window.__stape_extension.jsonFormatterInline = {
-    start: function() {
+    start: function () {
       jsonFormatterMonitor.start();
       jsonFormatterMonitor.enableFormatting();
     },
-    stop: function() {
+    stop: function () {
       jsonFormatterMonitor.disableFormatting();
       jsonFormatterMonitor.stop();
     }
   };
 
   jsonFormatterMonitor.start();
-  
+
   if (isEnabled) {
     jsonFormatterMonitor.enableFormatting();
   }

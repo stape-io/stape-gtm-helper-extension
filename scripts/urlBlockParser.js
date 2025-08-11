@@ -9,18 +9,18 @@ export function urlBlockParser(isEnabled = true) {
       parsedComponents: new Map()
     };
 
-    monitor.onNewHttpUrlDetails = function(callback) {
+    monitor.onNewHttpUrlDetails = function (callback) {
       monitor.callbacks.push(callback);
     };
 
-    monitor.getProtocol = function(url) {
+    monitor.getProtocol = function (url) {
       if (url.includes('://')) {
         return url.split('://')[0] + ':';
       }
       return window.location.protocol;
     };
 
-    monitor.getHostname = function(url) {
+    monitor.getHostname = function (url) {
       if (url.includes('://')) {
         const urlObj = new URL(url);
         return urlObj.hostname;
@@ -28,7 +28,7 @@ export function urlBlockParser(isEnabled = true) {
       return window.location.hostname;
     };
 
-    monitor.parseUrlParameters = function(url) {
+    monitor.parseUrlParameters = function (url) {
       if (!url || !url.includes('?')) return null;
 
       try {
@@ -39,13 +39,13 @@ export function urlBlockParser(isEnabled = true) {
         console.warn('Error parsing URL parameters:', error);
         return null;
       }
-    }
+    };
 
-    monitor.syntaxHighlightJSON = function(json) {
+    monitor.syntaxHighlightJSON = function (json) {
       json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
       return json.replace(
         /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
-        function(match, key, string, number, boolean, nullValue, brace, bracket, comma) {
+        function (match, key, string, number, boolean, nullValue, brace, bracket, comma) {
           if (key) {
             return '<span class="json-key">' + key + ':</span>';
           } else if (string) {
@@ -66,9 +66,9 @@ export function urlBlockParser(isEnabled = true) {
           return match;
         }
       );
-    }
+    };
 
-    monitor.createTableDisplay = function(method, url, params, _originalPre, _originalMethodCell) {
+    monitor.createTableDisplay = function (method, url, params, _originalPre, _originalMethodCell) {
       const container = document.createElement('div');
       container.className = 'parsed-request-container';
       container.style.cssText = `
@@ -82,22 +82,24 @@ export function urlBlockParser(isEnabled = true) {
       `;
 
       const header = document.createElement('div');
-      header.style.cssText = 'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
-      
+      header.style.cssText =
+        'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
+
       const methodSpan = document.createElement('span');
 
       let parsedUrl;
-      if(url.startsWith('http')){
-          parsedUrl = url.replace(/^https?:\/\//, '').split('?')[0];
+      if (url.startsWith('http')) {
+        parsedUrl = url.replace(/^https?:\/\//, '').split('?')[0];
       } else {
-          parsedUrl = document.location.hostname + url.replace(/^https?:\/\//, '').split('?')[0];
+        parsedUrl = document.location.hostname + url.replace(/^https?:\/\//, '').split('?')[0];
       }
       methodSpan.innerHTML = `<img src="https://i.postimg.cc/W3FfTVMx/stapeio.png" style="width: 16px; height: 16px; vertical-align: middle; margin-right: 8px;">${method} ${parsedUrl}`;
-      methodSpan.style.cssText = 'font-weight: bold; color: #495057; display: flex; align-items: center;';
-      
+      methodSpan.style.cssText =
+        'font-weight: bold; color: #495057; display: flex; align-items: center;';
+
       const buttonGroup = document.createElement('div');
       buttonGroup.style.cssText = 'display: flex; gap: 6px;';
-      
+
       const toggleBtn = document.createElement('button');
       toggleBtn.textContent = 'View as JSON';
       toggleBtn.style.cssText = `
@@ -129,7 +131,7 @@ export function urlBlockParser(isEnabled = true) {
 
       const tableContainer = document.createElement('div');
       tableContainer.className = 'table-content';
-      
+
       if (params && Object.keys(params).length > 0) {
         const table = document.createElement('table');
         table.style.cssText = `
@@ -158,7 +160,7 @@ export function urlBlockParser(isEnabled = true) {
             ${index % 2 === 0 ? 'background: #f8f9fa;' : 'background: white;'}
             border-bottom: 1px solid #dee2e6;
           `;
-          
+
           let displayValue = String(value);
           if (String(value).length > 80) {
             displayValue = String(value).substring(0, 80) + '...';
@@ -168,19 +170,20 @@ export function urlBlockParser(isEnabled = true) {
             <td style="padding: 8px 12px; font-family: monospace; color: #d73a49; font-weight: 500; vertical-align: top; word-break: break-word;">${key}</td>
             <td style="padding: 8px 12px; font-family: monospace; color: #032f62; vertical-align: top; word-break: break-word;" title="${String(value).length > 80 ? String(value) : ''}">${displayValue}</td>
           `;
-          
+
           tbody.appendChild(row);
         });
         table.appendChild(tbody);
         tableContainer.appendChild(table);
       } else {
-        tableContainer.innerHTML = '<div style="color: #6c757d; text-align: center; padding: 20px;">No parameters found</div>';
+        tableContainer.innerHTML =
+          '<div style="color: #6c757d; text-align: center; padding: 20px;">No parameters found</div>';
       }
 
       const objectContainer = document.createElement('div');
       objectContainer.className = 'object-content';
       objectContainer.style.cssText = 'display: none;';
-      
+
       const objectPre = document.createElement('pre');
       objectPre.style.cssText = `
         background: #f8f9fa;
@@ -212,7 +215,7 @@ export function urlBlockParser(isEnabled = true) {
       objectContainer.appendChild(objectPre);
 
       let currentView = 'table';
-      
+
       if (!document.getElementById('stape-json-styles')) {
         const style = document.createElement('style');
         style.id = 'stape-json-styles';
@@ -258,26 +261,29 @@ export function urlBlockParser(isEnabled = true) {
           pathname: url.split('?')[0],
           searchParams: params || {}
         };
-        
+
         const jsonText = JSON.stringify(objectData, null, 2);
 
-        navigator.clipboard.writeText(jsonText).then(() => {
-          const originalText = copyBtn.textContent;
-          copyBtn.textContent = 'Copied!';
-          copyBtn.style.background = '#20c997';
-          setTimeout(() => {
-            copyBtn.textContent = originalText;
-            copyBtn.style.background = '#28a745';
-          }, 1500);
-        }).catch(err => {
-          console.error('Failed to copy to clipboard:', err);
-          copyBtn.textContent = 'Failed';
-          copyBtn.style.background = '#dc3545';
-          setTimeout(() => {
-            copyBtn.textContent = 'Copy';
-            copyBtn.style.background = '#28a745';
-          }, 1500);
-        });
+        navigator.clipboard
+          .writeText(jsonText)
+          .then(() => {
+            const originalText = copyBtn.textContent;
+            copyBtn.textContent = 'Copied!';
+            copyBtn.style.background = '#20c997';
+            setTimeout(() => {
+              copyBtn.textContent = originalText;
+              copyBtn.style.background = '#28a745';
+            }, 1500);
+          })
+          .catch((err) => {
+            console.error('Failed to copy to clipboard:', err);
+            copyBtn.textContent = 'Failed';
+            copyBtn.style.background = '#dc3545';
+            setTimeout(() => {
+              copyBtn.textContent = 'Copy';
+              copyBtn.style.background = '#28a745';
+            }, 1500);
+          });
       };
 
       toggleBtn.onclick = () => {
@@ -303,30 +309,38 @@ export function urlBlockParser(isEnabled = true) {
       container.appendChild(objectContainer);
 
       return container;
-    }
+    };
 
-    monitor.enhanceComponent = function(component) {
+    monitor.enhanceComponent = function (component) {
       const componentId = monitor.getComponentId(component);
-      
+
       if (monitor.parsedComponents.has(componentId)) {
         return null;
       }
 
       const info = monitor.extractHttpUrlInfo(component);
-      
+
       const methodCell = component.querySelector('.gtm-debug-table-cell--query-param');
-      const urlCell = component.querySelector('.gtm-debug-table-cell--query-param + .gtm-debug-table-cell');
+      const urlCell = component.querySelector(
+        '.gtm-debug-table-cell--query-param + .gtm-debug-table-cell'
+      );
       const urlPre = urlCell?.querySelector('pre');
-      
+
       if (urlPre && info.url) {
         const params = monitor.parseUrlParameters(info.url);
-        
+
         if (methodCell) methodCell.style.display = 'none';
         urlPre.style.display = 'none';
-        
-        const tableDisplay = monitor.createTableDisplay(info.method || '', info.url || '', params, urlPre, methodCell);
+
+        const tableDisplay = monitor.createTableDisplay(
+          info.method || '',
+          info.url || '',
+          params,
+          urlPre,
+          methodCell
+        );
         urlCell?.appendChild(tableDisplay);
-        
+
         monitor.parsedComponents.set(componentId, {
           component,
           params,
@@ -340,9 +354,9 @@ export function urlBlockParser(isEnabled = true) {
       }
 
       return info;
-    }
+    };
 
-    monitor.extractHttpUrlInfo = function(component) {
+    monitor.extractHttpUrlInfo = function (component) {
       const info = {
         component: component,
         timestamp: new Date().toISOString(),
@@ -356,7 +370,9 @@ export function urlBlockParser(isEnabled = true) {
         info.method = methodCell.textContent?.trim() || null;
       }
 
-      const urlCell = component.querySelector('.gtm-debug-table-cell--query-param + .gtm-debug-table-cell pre');
+      const urlCell = component.querySelector(
+        '.gtm-debug-table-cell--query-param + .gtm-debug-table-cell pre'
+      );
       if (urlCell) {
         info.url = urlCell.textContent?.trim() || null;
       }
@@ -364,14 +380,17 @@ export function urlBlockParser(isEnabled = true) {
       return info;
     };
 
-    monitor.getComponentId = function(component) {
+    monitor.getComponentId = function (component) {
       if (!component.hasAttribute('data-stape-id')) {
-        component.setAttribute('data-stape-id', `stape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+        component.setAttribute(
+          'data-stape-id',
+          `stape-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+        );
       }
       return component.getAttribute('data-stape-id') || '';
     };
 
-    monitor.processNewComponents = function() {
+    monitor.processNewComponents = function () {
       if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
       monitor.debounceTimer = setTimeout(() => {
         const currentComponents = document.querySelectorAll('http-url-details');
@@ -396,9 +415,9 @@ export function urlBlockParser(isEnabled = true) {
       }, 100);
     };
 
-    monitor.cleanupRemovedComponents = function() {
+    monitor.cleanupRemovedComponents = function () {
       const currentComponentIds = new Set();
-      document.querySelectorAll('http-url-details[data-stape-id]').forEach(component => {
+      document.querySelectorAll('http-url-details[data-stape-id]').forEach((component) => {
         const id = component.getAttribute('data-stape-id');
         if (id) currentComponentIds.add(id);
       });
@@ -411,10 +430,10 @@ export function urlBlockParser(isEnabled = true) {
       }
     };
 
-    monitor.start = function() {
+    monitor.start = function () {
       monitor.detectedComponents.clear();
       monitor.parsedComponents.clear();
-      
+
       monitor.processNewComponents();
 
       monitor.observer = new MutationObserver((mutations) => {
@@ -423,16 +442,22 @@ export function urlBlockParser(isEnabled = true) {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.tagName === 'HTTP-URL-DETAILS' || element.querySelector?.('http-url-details')) {
+              if (
+                element.tagName === 'HTTP-URL-DETAILS' ||
+                element.querySelector?.('http-url-details')
+              ) {
                 shouldProcess = true;
               }
             }
           });
-          
+
           mutation.removedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.tagName === 'HTTP-URL-DETAILS' || element.querySelector?.('http-url-details')) {
+              if (
+                element.tagName === 'HTTP-URL-DETAILS' ||
+                element.querySelector?.('http-url-details')
+              ) {
                 shouldProcess = true;
               }
             }
@@ -443,29 +468,30 @@ export function urlBlockParser(isEnabled = true) {
         }
       });
 
-      monitor.observer.observe(document.body, { childList: true, subtree: true });      
+      monitor.observer.observe(document.body, { childList: true, subtree: true });
     };
 
-    monitor.stop = function() {
+    monitor.stop = function () {
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
         if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
-        
+
         monitor.restoreAll();
-        
       }
     };
 
-    monitor.executeCallbacks = function(components) {
-      monitor.callbacks.forEach(callback => {
-        try { callback(components); } catch (error) {
+    monitor.executeCallbacks = function (components) {
+      monitor.callbacks.forEach((callback) => {
+        try {
+          callback(components);
+        } catch (error) {
           console.error('Error in callback:', error);
         }
       });
     };
 
-    monitor.getStats = function() {
+    monitor.getStats = function () {
       return {
         totalDetected: monitor.detectedComponents.size,
         totalParsed: monitor.parsedComponents.size,
@@ -474,21 +500,21 @@ export function urlBlockParser(isEnabled = true) {
       };
     };
 
-    monitor.clearCache = function() {
+    monitor.clearCache = function () {
       monitor.detectedComponents.clear();
       monitor.parsedComponents.clear();
     };
 
-    monitor.restoreAll = function() {
+    monitor.restoreAll = function () {
       monitor.parsedComponents.forEach(({ originalPre, originalMethodCell, tableDisplay }) => {
         originalPre.style.display = 'block';
         if (originalMethodCell) originalMethodCell.style.display = 'table-cell';
-        
+
         if (tableDisplay?.parentNode) {
           tableDisplay.parentNode.removeChild(tableDisplay);
         }
       });
-      
+
       monitor.parsedComponents.clear();
     };
 
@@ -497,8 +523,7 @@ export function urlBlockParser(isEnabled = true) {
 
   window.__stape_extension.urlBlocksParser = HTTPUrlDetailsMonitor();
 
-  window.__stape_extension.urlBlocksParser.onNewHttpUrlDetails((components) => {
-  });
+  window.__stape_extension.urlBlocksParser.onNewHttpUrlDetails((components) => {});
 
   if (isEnabled) {
     window.__stape_extension.urlBlocksParser.start();

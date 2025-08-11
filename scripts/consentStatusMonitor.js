@@ -1,25 +1,22 @@
 export function consentStatusMonitor(isEnabled = true) {
   window.__stape_extension = window.__stape_extension || {};
-  
+
   function ConsentStatusMonitor() {
     const stylesId = 'consent-status-monitor-styles';
-  
+
     const consentMappings = {
       'g1--': ['-', '-'],
       'g10-': ['denied', '-'],
       'g11-': ['granted', '-'],
       'g1-0': ['-', 'denied'],
       'g1-1': ['-', 'granted'],
-      'g100': ['denied', 'denied'],
-      'g110': ['granted', 'denied'],
-      'g101': ['denied', 'granted'],
-      'g111': ['granted', 'granted']
+      g100: ['denied', 'denied'],
+      g110: ['granted', 'denied'],
+      g101: ['denied', 'granted'],
+      g111: ['granted', 'granted']
     };
 
-    const consentTypes = [
-      'ad_storage',
-      'analytics_storage'
-    ];
+    const consentTypes = ['ad_storage', 'analytics_storage'];
 
     const monitor = {
       observer: null,
@@ -28,7 +25,7 @@ export function consentStatusMonitor(isEnabled = true) {
       isActive: false
     };
 
-    monitor.injectStyles = function() {
+    monitor.injectStyles = function () {
       let styleEl = document.getElementById(stylesId);
       if (styleEl) return;
 
@@ -49,13 +46,13 @@ export function consentStatusMonitor(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-    monitor.findSelectedRequest = function() {
+    monitor.findSelectedRequest = function () {
       const selectors = [
-        ".message-list__group .message-list__row--child-selected .wd-debug-message-title",
-        ".message-list__row--child-selected .wd-debug-message-title",
-        ".wd-debug-message-title"
+        '.message-list__group .message-list__row--child-selected .wd-debug-message-title',
+        '.message-list__row--child-selected .wd-debug-message-title',
+        '.wd-debug-message-title'
       ];
-      
+
       for (const selector of selectors) {
         const element = document.querySelector(selector);
         if (element && element.title) {
@@ -65,11 +62,11 @@ export function consentStatusMonitor(isEnabled = true) {
       return null;
     };
 
-    monitor.extractGcsValue = function(url) {
+    monitor.extractGcsValue = function (url) {
       if (!url || !url.includes('collect') || !url.includes('v=2')) {
         return null;
       }
-      
+
       const gcsMatch = url.match(/gcs=([^&]+)/i);
       if (gcsMatch) {
         const gcsValue = gcsMatch[1].toLowerCase();
@@ -78,15 +75,18 @@ export function consentStatusMonitor(isEnabled = true) {
       return null;
     };
 
-    monitor.createConsentTable = function(gcsValue) {
+    monitor.createConsentTable = function (gcsValue) {
       const statuses = consentMappings[gcsValue];
-      
-      const tableRows = consentTypes.map((type, index) => {
-        const status = statuses[index];
-        const statusDisplay = status === 'granted' ? 'Granted' : status === 'denied' ? 'Denied' : '-';
-        const statusClass = status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undefined';
-        
-        return `
+
+      const tableRows = consentTypes
+        .map((type, index) => {
+          const status = statuses[index];
+          const statusDisplay =
+            status === 'granted' ? 'Granted' : status === 'denied' ? 'Denied' : '-';
+          const statusClass =
+            status === 'granted' ? 'granted' : status === 'denied' ? 'denied' : 'undefined';
+
+          return `
           <tr class="gtm-debug-table-row gtm-debug-consent-table-row">
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">${type}</td>
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
@@ -95,8 +95,9 @@ export function consentStatusMonitor(isEnabled = true) {
               </div>
             </td>
           </tr>`;
-      }).join('');
-      
+        })
+        .join('');
+
       return `
         <table class="gtm-debug-consent-table dma-consent-table" style="margin-bottom:1em ">
           <thead>
@@ -112,8 +113,8 @@ export function consentStatusMonitor(isEnabled = true) {
       `;
     };
 
-    monitor.showConsentTable = function(gcsValue) {
-      const insertTarget = document.querySelector(".blg-card-tabs");
+    monitor.showConsentTable = function (gcsValue) {
+      const insertTarget = document.querySelector('.blg-card-tabs');
       if (!insertTarget) {
         return false;
       }
@@ -122,26 +123,26 @@ export function consentStatusMonitor(isEnabled = true) {
 
       const tableHTML = monitor.createConsentTable(gcsValue);
       insertTarget.insertAdjacentHTML('afterend', tableHTML);
-      
+
       return true;
     };
 
-    monitor.hideConsentTable = function() {
+    monitor.hideConsentTable = function () {
       const existingTable = document.querySelector('.gtm-debug-consent-table');
       if (existingTable) {
         existingTable.remove();
       }
     };
 
-    monitor.checkCurrentState = function() {
+    monitor.checkCurrentState = function () {
       if (!monitor.isActive) return;
-      
+
       const currentTitle = monitor.findSelectedRequest();
       const gcsValue = currentTitle ? monitor.extractGcsValue(currentTitle) : null;
-      
+
       if (gcsValue !== monitor.currentGcsValue) {
         monitor.currentGcsValue = gcsValue;
-        
+
         if (gcsValue) {
           monitor.showConsentTable(gcsValue);
         } else {
@@ -150,22 +151,22 @@ export function consentStatusMonitor(isEnabled = true) {
       }
     };
 
-    monitor.start = function() {
+    monitor.start = function () {
       if (monitor.isActive) {
         return;
       }
-      
+
       monitor.isActive = true;
       monitor.currentGcsValue = null;
-      
+
       monitor.injectStyles();
-      
+
       monitor.checkCurrentState();
-      
+
       monitor.checkInterval = setInterval(() => {
         monitor.checkCurrentState();
       }, 500);
-      
+
       monitor.observer = new MutationObserver(() => {
         clearTimeout(monitor.debounceTimer);
         monitor.debounceTimer = setTimeout(() => {
@@ -173,43 +174,41 @@ export function consentStatusMonitor(isEnabled = true) {
         }, 100);
       });
 
-      monitor.observer.observe(document.body, { 
-        childList: true, 
+      monitor.observer.observe(document.body, {
+        childList: true,
         subtree: true,
         attributes: true,
         attributeFilter: ['class', 'title']
       });
-      
     };
 
-    monitor.stop = function() {
+    monitor.stop = function () {
       if (!monitor.isActive) {
         return;
       }
-      
+
       monitor.isActive = false;
       monitor.currentGcsValue = null;
-      
+
       if (monitor.checkInterval) {
         clearInterval(monitor.checkInterval);
         monitor.checkInterval = null;
       }
-      
+
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
       }
-      
+
       if (monitor.debounceTimer) {
         clearTimeout(monitor.debounceTimer);
         monitor.debounceTimer = null;
       }
-      
+
       monitor.hideConsentTable();
-      
+
       const styleEl = document.getElementById(stylesId);
       if (styleEl) styleEl.remove();
-      
     };
 
     return monitor;

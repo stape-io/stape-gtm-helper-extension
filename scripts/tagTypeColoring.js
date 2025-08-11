@@ -1,21 +1,98 @@
 export function tagTypeColoring(isEnabled = true) {
   window.__stape_extension = window.__stape_extension || {};
-  
+
   function TagTypeColoringMonitor() {
     const vendorStylesId = 'tag-types-coloring-styles';
-    
-    const vendorMap = new Map([   
-      [/Google Tag|Google Analytics|Google Analytics 4/i, { vendor: 'google', color: '#EEA849', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
-      [/Data Tag|Stape/i, { vendor: 'stape', color: '#FF6D34', icon: 'https://cdn.stape.io/i/688a4bb90eaac838702555.ico' }],
-      [/Google Ads|Floodlight|Conversion Linker/i, { vendor: 'google-ads', color: '#3CA55C', icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico' }],
-      [/Microsoft Ads/i, { vendor: 'bing', color: '#3CA55C', icon: 'https://www.bing.com/favicon.ico?toWww=1&redig=A5077B0B51D042998466895B120457AE' }],      
-      [/Pinterest/i, { vendor: 'pinterest', color: '#92140C', icon: 'https://cdn.stape.io/i/688a4bc0042a7060906944.png' }],
-      [/Facebook|Meta/i, { vendor: 'facebook', color: '#0072FF', icon: 'https://cdn.stape.io/i/688a4ebd43077257734273.ico' }],
-      [/TikTok/i, { vendor: 'tiktok', color: '#333333', icon: 'https://cdn.stape.io/i/688a4bb53858e835102417.png' }],
-      [/BigQuery/i, { vendor: 'bigquery', color: '#5086EC', icon: 'https://cdn.stape.io/i/688a4bca09d7a787895189.ico' }],
-      [/LinkedIn/i, { vendor: 'linkedin', color: '#006699', icon: 'https://cdn.stape.io/i/688a4bcd4d8e5902639725.ico' }],
-      [/Snapchat|Snap Pixel/i, { vendor: 'snapchat', color: '#FFD60A', icon: 'https://cdn.stape.io/i/688a4bbcaf65a634350590.ico' }],
-      [/Klaviyo/i, { vendor: 'klaviyo', color: '#1D1E20', icon: 'https://cdn.stape.io/i/688a4bc3b2835223698495.png' }]
+
+    const vendorMap = new Map([
+      [
+        /Google Tag|Google Analytics|Google Analytics 4/i,
+        {
+          vendor: 'google',
+          color: '#EEA849',
+          icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico'
+        }
+      ],
+      [
+        /Data Tag|Stape/i,
+        {
+          vendor: 'stape',
+          color: '#FF6D34',
+          icon: 'https://cdn.stape.io/i/688a4bb90eaac838702555.ico'
+        }
+      ],
+      [
+        /Google Ads|Floodlight|Conversion Linker/i,
+        {
+          vendor: 'google-ads',
+          color: '#3CA55C',
+          icon: 'https://cdn.stape.io/i/688a4bc6bbde5900529047.ico'
+        }
+      ],
+      [
+        /Microsoft Ads/i,
+        {
+          vendor: 'bing',
+          color: '#3CA55C',
+          icon: 'https://www.bing.com/favicon.ico?toWww=1&redig=A5077B0B51D042998466895B120457AE'
+        }
+      ],
+      [
+        /Pinterest/i,
+        {
+          vendor: 'pinterest',
+          color: '#92140C',
+          icon: 'https://cdn.stape.io/i/688a4bc0042a7060906944.png'
+        }
+      ],
+      [
+        /Facebook|Meta/i,
+        {
+          vendor: 'facebook',
+          color: '#0072FF',
+          icon: 'https://cdn.stape.io/i/688a4ebd43077257734273.ico'
+        }
+      ],
+      [
+        /TikTok/i,
+        {
+          vendor: 'tiktok',
+          color: '#333333',
+          icon: 'https://cdn.stape.io/i/688a4bb53858e835102417.png'
+        }
+      ],
+      [
+        /BigQuery/i,
+        {
+          vendor: 'bigquery',
+          color: '#5086EC',
+          icon: 'https://cdn.stape.io/i/688a4bca09d7a787895189.ico'
+        }
+      ],
+      [
+        /LinkedIn/i,
+        {
+          vendor: 'linkedin',
+          color: '#006699',
+          icon: 'https://cdn.stape.io/i/688a4bcd4d8e5902639725.ico'
+        }
+      ],
+      [
+        /Snapchat|Snap Pixel/i,
+        {
+          vendor: 'snapchat',
+          color: '#FFD60A',
+          icon: 'https://cdn.stape.io/i/688a4bbcaf65a634350590.ico'
+        }
+      ],
+      [
+        /Klaviyo/i,
+        {
+          vendor: 'klaviyo',
+          color: '#1D1E20',
+          icon: 'https://cdn.stape.io/i/688a4bc3b2835223698495.png'
+        }
+      ]
     ]);
 
     const monitor = {
@@ -26,15 +103,17 @@ export function tagTypeColoring(isEnabled = true) {
       coloredComponents: new Map()
     };
 
-    monitor.onNewTagCards = function(callback) {
+    monitor.onNewTagCards = function (callback) {
       monitor.callbacks.push(callback);
     };
 
-    monitor.injectStyles = function() {
+    monitor.injectStyles = function () {
       let styleEl = document.getElementById(vendorStylesId);
       if (styleEl) return;
 
-      const styles = Array.from(vendorMap.values()).map(({ vendor, color, icon }) => `
+      const styles = Array.from(vendorMap.values())
+        .map(
+          ({ vendor, color, icon }) => `
         .stape-border-${vendor} {
           border-left: 4px solid ${color} !important;
         }
@@ -52,7 +131,9 @@ export function tagTypeColoring(isEnabled = true) {
           position: relative;
           top: 1px;
         }
-      `).join('\n');
+      `
+        )
+        .join('\n');
 
       styleEl = document.createElement('style');
       styleEl.id = vendorStylesId;
@@ -60,7 +141,7 @@ export function tagTypeColoring(isEnabled = true) {
       document.head.appendChild(styleEl);
     };
 
-    monitor.getVendorClass = function(tagTypeText) {
+    monitor.getVendorClass = function (tagTypeText) {
       for (const [regex, info] of vendorMap) {
         if (regex.test(tagTypeText)) {
           return `stape-border-${info.vendor}`;
@@ -69,16 +150,19 @@ export function tagTypeColoring(isEnabled = true) {
       return null;
     };
 
-    monitor.getComponentId = function(component) {
+    monitor.getComponentId = function (component) {
       if (!component.hasAttribute('data-stape-coloring-id')) {
-        component.setAttribute('data-stape-coloring-id', `stape-coloring-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`);
+        component.setAttribute(
+          'data-stape-coloring-id',
+          `stape-coloring-${Date.now()}-${Math.random().toString(36).substring(2, 11)}`
+        );
       }
       return component.getAttribute('data-stape-coloring-id') || '';
     };
 
-    monitor.enhanceCard = function(card) {
+    monitor.enhanceCard = function (card) {
       const componentId = monitor.getComponentId(card);
-      
+
       if (monitor.coloredComponents.has(componentId)) {
         return null;
       }
@@ -105,7 +189,7 @@ export function tagTypeColoring(isEnabled = true) {
       return info;
     };
 
-    monitor.processNewComponents = function() {
+    monitor.processNewComponents = function () {
       if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
       monitor.debounceTimer = setTimeout(() => {
         const currentComponents = document.querySelectorAll('tags-tab .gtm-debug-card');
@@ -130,12 +214,14 @@ export function tagTypeColoring(isEnabled = true) {
       }, 100);
     };
 
-    monitor.cleanupRemovedComponents = function() {
+    monitor.cleanupRemovedComponents = function () {
       const currentComponentIds = new Set();
-      document.querySelectorAll('tags-tab .gtm-debug-card[data-stape-coloring-id]').forEach(component => {
-        const id = component.getAttribute('data-stape-coloring-id');
-        if (id) currentComponentIds.add(id);
-      });
+      document
+        .querySelectorAll('tags-tab .gtm-debug-card[data-stape-coloring-id]')
+        .forEach((component) => {
+          const id = component.getAttribute('data-stape-coloring-id');
+          if (id) currentComponentIds.add(id);
+        });
 
       for (const [componentId] of monitor.coloredComponents) {
         if (!currentComponentIds.has(componentId)) {
@@ -145,10 +231,10 @@ export function tagTypeColoring(isEnabled = true) {
       }
     };
 
-    monitor.start = function() {
+    monitor.start = function () {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
-      
+
       monitor.injectStyles();
       monitor.processNewComponents();
 
@@ -158,16 +244,22 @@ export function tagTypeColoring(isEnabled = true) {
           mutation.addedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.classList?.contains('gtm-debug-card') || element.querySelector?.('.gtm-debug-card')) {
+              if (
+                element.classList?.contains('gtm-debug-card') ||
+                element.querySelector?.('.gtm-debug-card')
+              ) {
                 shouldProcess = true;
               }
             }
           });
-          
+
           mutation.removedNodes.forEach((node) => {
             if (node.nodeType === Node.ELEMENT_NODE) {
               const element = node;
-              if (element.classList?.contains('gtm-debug-card') || element.querySelector?.('.gtm-debug-card')) {
+              if (
+                element.classList?.contains('gtm-debug-card') ||
+                element.querySelector?.('.gtm-debug-card')
+              ) {
                 shouldProcess = true;
               }
             }
@@ -181,26 +273,27 @@ export function tagTypeColoring(isEnabled = true) {
       monitor.observer.observe(document.body, { childList: true, subtree: true });
     };
 
-    monitor.stop = function() {
+    monitor.stop = function () {
       if (monitor.observer) {
         monitor.observer.disconnect();
         monitor.observer = null;
         if (monitor.debounceTimer) clearTimeout(monitor.debounceTimer);
-        
+
         monitor.restoreAll();
-        
       }
     };
 
-    monitor.executeCallbacks = function(components) {
-      monitor.callbacks.forEach(callback => {
-        try { callback(components); } catch (error) {
+    monitor.executeCallbacks = function (components) {
+      monitor.callbacks.forEach((callback) => {
+        try {
+          callback(components);
+        } catch (error) {
           console.error('Error in callback:', error);
         }
       });
     };
 
-    monitor.getStats = function() {
+    monitor.getStats = function () {
       return {
         totalDetected: monitor.detectedComponents.size,
         totalColored: monitor.coloredComponents.size,
@@ -209,12 +302,12 @@ export function tagTypeColoring(isEnabled = true) {
       };
     };
 
-    monitor.clearCache = function() {
+    monitor.clearCache = function () {
       monitor.detectedComponents.clear();
       monitor.coloredComponents.clear();
     };
 
-    monitor.restoreAll = function() {
+    monitor.restoreAll = function () {
       const cards = document.querySelectorAll('tags-tab .gtm-debug-card');
       for (const card of cards) {
         for (const { vendor } of vendorMap.values()) {
@@ -224,7 +317,7 @@ export function tagTypeColoring(isEnabled = true) {
 
       const styleEl = document.getElementById(vendorStylesId);
       if (styleEl) styleEl.remove();
-      
+
       monitor.coloredComponents.clear();
     };
 
@@ -233,8 +326,7 @@ export function tagTypeColoring(isEnabled = true) {
 
   window.__stape_extension.tagTypeColoring = TagTypeColoringMonitor();
 
-  window.__stape_extension.tagTypeColoring.onNewTagCards((components) => {
-  });
+  window.__stape_extension.tagTypeColoring.onNewTagCards((components) => {});
 
   if (isEnabled === true) {
     window.__stape_extension.tagTypeColoring.start();
