@@ -326,12 +326,18 @@ export function previewUIFilters(isEnabled = true, environment = null) {
         });
       }
 
-      searchQuery = '';
-      applyFilters();
+      resetAllFilters();
     } catch (error) {
-      searchQuery = '';
-      applyFilters();
+      resetAllFilters();
     }
+  };
+
+  const resetAllFilters = () => {
+    searchQuery = '';
+    getItems().forEach(item => {
+      item.style.display = '';
+    });
+    applyFilters();
   };
  
   const applyFilters = () => {
