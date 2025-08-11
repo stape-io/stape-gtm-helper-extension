@@ -25,7 +25,7 @@ export function consentStatusMonitor(isEnabled = true) {
     const monitor = {
       observer: null,
       checkInterval: null,
-      currentGcsValue: null,
+      consentString: null,
       isActive: false
     };
 
@@ -66,15 +66,18 @@ export function consentStatusMonitor(isEnabled = true) {
       return null;
     };
 
-    monitor.extractGcsValue = function(url) {
+    monitor.extractGcdValue = function(url) {
+    
       if (!url || !url.includes('collect') || !url.includes('v=2')) {
         return null;
       }
       
-      const gcsMatch = url.match(/gcs=([^&]+)/i);
-      if (gcsMatch) {
-        const gcsValue = gcsMatch[1].toLowerCase();
-        return consentMappings[gcsValue] ? gcsValue : null;
+      const m = url.match(/gcd=([^&]+)/i);
+      if (m) {
+          console.log(m)
+        const gcsValue = m[1].toLowerCase();
+        return ['denied', 'denied', 'denied', 'denied'];
+        //return consentMappings[gcsValue] ? gcsValue : null;
       }
       return null;
     };
@@ -108,8 +111,8 @@ export function consentStatusMonitor(isEnabled = true) {
           <thead>
             <tr class="gtm-debug-table-row">
               <th class="gtm-debug-table-header-cell"><img width="16px" height="16px" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico" /></th>
-              <th class="gtm-debug-table-header-cell">On-page Default</th>
-              <th class="gtm-debug-table-header-cell">On-page Update</th>
+              <th class="gtm-debug-table-header-cell">Default</th>
+              <th class="gtm-debug-table-header-cell">Update</th>
             </tr>
           </thead>
           <tbody>
@@ -144,16 +147,17 @@ export function consentStatusMonitor(isEnabled = true) {
       if (!monitor.isActive) return;
       
       const currentTitle = monitor.findSelectedRequest();
-      const gcsValue = currentTitle ? monitor.extractGcsValue(currentTitle) : null;
-      
-      if (gcsValue !== monitor.currentGcsValue) {
-        monitor.currentGcsValue = gcsValue;
+      const constString = currentTitle ? monitor.extractGcdValue(currentTitle) : null;
+   
+      if (constString !== monitor.consentString) {
+        monitor.consentString = constString;
         
-        if (gcsValue) {
-          monitor.showConsentTable(gcsValue);
+        if (constString) {
+          monitor.showConsentTable(constString);
         } else {
           monitor.hideConsentTable();
         }
+ 
       }
     };
 
@@ -163,7 +167,7 @@ export function consentStatusMonitor(isEnabled = true) {
       }
       
       monitor.isActive = true;
-      monitor.currentGcsValue = null;
+      monitor.consentString = null;
       
       monitor.injectStyles();
       
@@ -195,7 +199,7 @@ export function consentStatusMonitor(isEnabled = true) {
       }
       
       monitor.isActive = false;
-      monitor.currentGcsValue = null;
+      monitor.consentString = null;
       
       if (monitor.checkInterval) {
         clearInterval(monitor.checkInterval);
