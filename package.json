@@ -1,0 +1,39 @@
+{
+  "name": "stape-gtm-helper",
+  "description": "Enhance your Google Tag Manager debugging",
+  "private": true,
+  "version": "3.0.0",
+  "type": "module",
+  "scripts": {
+    "dev": "wxt",
+    "dev:firefox": "wxt -b firefox",
+    "build": "wxt build",
+    "build:firefox": "wxt build -b firefox",
+    "zip": "wxt zip",
+    "zip:firefox": "wxt zip -b firefox",
+    "compile": "vue-tsc --noEmit",
+    "lint": "eslint . --ext .ts,.vue,.js --fix",
+    "lint:check": "eslint . --ext .ts,.vue,.js",
+    "format": "prettier --write **/*.{js,ts}",
+    "format:check": "prettier --check **/*.{js,ts}",
+    "postinstall": "wxt prepare"
+  },
+  "dependencies": {
+    "@tailwindcss/vite": "^4.1.11",
+    "@wxt-dev/storage": "^1.1.1",
+    "tailwindcss": "^4.1.11",
+    "vue": "^3.5.18",
+    "webext-bridge": "^6.0.1"
+  },
+  "devDependencies": {
+    "@wxt-dev/module-vue": "^1.0.2",
+    "@typescript-eslint/eslint-plugin": "^8.39.0",
+    "@typescript-eslint/parser": "^8.39.0",
+    "eslint": "^9.32.0",
+    "eslint-plugin-vue": "^10.4.0",
+    "prettier": "^3.6.2",
+    "typescript": "5.9.2",
+    "vue-tsc": "^3.0.5",
+    "wxt": "^0.20.7"
+  }
+}
