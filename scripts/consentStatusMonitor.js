@@ -93,31 +93,24 @@ export function consentStatusMonitor(isEnabled = true) {
         ad_user_data: monitor.parseConsentBlock(ad_user_data),
         ad_personalization: monitor.parseConsentBlock(ad_personalization)
       }
-      console.log([ad_storage, analytics_storage, ad_user_data, ad_personalization])
-      const statuses = [['denied', 'denied', 'denied', 'denied'], ['denied', 'denied', 'denied', 'denied']];
-
       const tableRows = consentCategories.map((type, index) => {
-        console.log("type", type, consentModel[type])
-
-        const status = statuses[index];
         return `
           <tr class="gtm-debug-table-row gtm-debug-consent-table-row">
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">${type}</td>
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
               <div class="consent-value-cell">
                 ${consentModel[type].default && consentModel[type].default !== '-' ?
-            `<div class="consent ${consentModel[type].default}">${consentModel[type].default}</div>` :
-            ''
-          }              
-                
+                  `<div class="consent ${consentModel[type].default}">${consentModel[type].default}</div>` :
+                  ''
+                }              
               </div>
             </td>
             <td class="gtm-debug-table-cell gtm-debug-consent-table-cell">
               <div class="consent-value-cell">
                 ${consentModel[type].update && consentModel[type].update !== '-' ?
-            `<div class="consent ${consentModel[type].update}">${consentModel[type].update}</div>` :
-            ''
-          }              
+                  `<div class="consent ${consentModel[type].update}">${consentModel[type].update}</div>` :
+                  ''
+                }              
               </div>
             </td>
           </tr>`;
