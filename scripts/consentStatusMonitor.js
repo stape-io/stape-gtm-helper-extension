@@ -219,6 +219,5 @@ export function consentStatusMonitor(isEnabled = true) {
 
   if (isEnabled) {
     window.__stape_extension.consentStatusMonitor.start();
-  } else {
   }
 }

@@ -502,6 +502,5 @@ export function urlBlockParser(isEnabled = true) {
 
   if (isEnabled) {
     window.__stape_extension.urlBlocksParser.start();
-  } else {
   }
 }

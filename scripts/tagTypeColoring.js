@@ -238,6 +238,5 @@ export function tagTypeColoring(isEnabled = true) {
 
   if (isEnabled === true) {
     window.__stape_extension.tagTypeColoring.start();
-  } else {
   }
 }

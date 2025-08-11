@@ -311,6 +311,5 @@ export function jsonFormatter(isEnabled = true) {
   
   if (isEnabled) {
     jsonFormatterMonitor.enableFormatting();
-  } else {
   }
 }

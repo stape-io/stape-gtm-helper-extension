@@ -217,6 +217,5 @@ export function tagStatusColoring(isEnabled = true) {
 
   if (isEnabled) {
     window.__stape_extension.tagStatusColoring.start();
-  } else {
   }
 }
