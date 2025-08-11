@@ -66,25 +66,18 @@ export function consentStatusMonitor(isEnabled = true) {
       return null;
     };
 
-    monitor.extractGcdValue = function(url) {
-    
+    monitor.extractGcdValue = function(url) {    
       if (!url || !url.includes('collect') || !url.includes('v=2')) {
         return null;
-      }
-      
-      const m = url.match(/gcd=([^&]+)/i);
-      if (m) {
-          console.log(m)
-        const gcsValue = m[1].toLowerCase();
-        return ['denied', 'denied', 'denied', 'denied'];
-        //return consentMappings[gcsValue] ? gcsValue : null;
-      }
-      return null;
+      }      
+      // Table will now genrated on the createTable
+      return url.match(/gcd=([^&]+)/i)?.[1]?.toLowerCase() || null;
+
     };
 
-    monitor.createConsentTable = function(gcsValue) {
+    monitor.createConsentTable = function(consentState) {
       const statuses = consentMappings[gcsValue];
-      
+       return [['denied', 'denied', 'denied', 'denied'],['denied', 'denied', 'denied', 'denied']];
       const tableRows = consentTypes.map((type, index) => {
         const status = statuses[index];
         const statusDisplay = status === 'granted' ? 'Granted' : status === 'denied' ? 'Denied' : '-';
