@@ -4,17 +4,6 @@ export function consentStatusMonitor(isEnabled = true) {
   function ConsentStatusMonitor() {
     const stylesId = 'consent-status-monitor-styles';
     
-    const consentMappings = {
-      'g100': ['granted', 'granted', 'granted', 'granted'],
-      'g111': ['granted', 'granted', 'denied', 'denied'],
-      'g110': ['granted', 'granted', 'granted', 'denied'],
-      'g101': ['granted', 'granted', 'denied', 'granted'],
-      'g011': ['denied', 'denied', 'denied', 'denied'],
-      'g010': ['denied', 'denied', 'granted', 'denied'],
-      'g001': ['denied', 'denied', 'denied', 'granted'],
-      'g000': ['denied', 'denied', 'denied', 'denied']
-    };
-
     const consentTypes = [
       'ad_storage',
       'analytics_storage',
@@ -76,8 +65,7 @@ export function consentStatusMonitor(isEnabled = true) {
     };
 
     monitor.createConsentTable = function(consentState) {
-      const statuses = consentMappings[gcsValue];
-       return [['denied', 'denied', 'denied', 'denied'],['denied', 'denied', 'denied', 'denied']];
+      const statuses = [['denied', 'denied', 'denied', 'denied'],['denied', 'denied', 'denied', 'denied']];
       const tableRows = consentTypes.map((type, index) => {
         const status = statuses[index];
         const statusDisplay = status === 'granted' ? 'Granted' : status === 'denied' ? 'Denied' : '-';
