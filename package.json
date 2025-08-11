@@ -14,8 +14,8 @@
     "compile": "vue-tsc --noEmit",
     "lint": "eslint . --ext .ts,.vue,.js --fix",
     "lint:check": "eslint . --ext .ts,.vue,.js",
-    "format": "prettier --write .",
-    "format:check": "prettier --check .",
+    "format": "prettier --write **/*.{js,ts}",
+    "format:check": "prettier --check **/*.{js,ts}",
     "postinstall": "wxt prepare"
   },
   "dependencies": {
