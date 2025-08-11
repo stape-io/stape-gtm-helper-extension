@@ -21,6 +21,7 @@ bun run dev:firefox # For Firefox
 
 This will launch a local version of the chosen browser with the extension automatically loaded. By default, it will open [tagmanager.google.com](https://tagmanager.google.com).
 Popup Windows is now using VUE3 and HRM.
+
 ---
 
 ## 💡 Open Source
