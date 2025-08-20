@@ -1,6 +1,4 @@
 export function previewUIFilters(isEnabled = true, environment = null) {
-  if (!isEnabled) return;
-
   window.__stape_extension = window.__stape_extension || {};
 
   let selectedTypes = [];
@@ -145,7 +143,7 @@ export function previewUIFilters(isEnabled = true, environment = null) {
           }
           .stape-header {
             padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #dadce0;
-            color: #202124; font-weight: 500; display: flex; justify-content: space-between; 
+            color: #202124; font-weight: 500; display: flex; justify-content: space-between;
             align-items: center; cursor: pointer; user-select: none;
           }
           .stape-title { display: flex; align-items: center; }
@@ -154,30 +152,30 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             font-size: 14px; transition: transform 0.2s ease; font-weight: bold;
           }
           .stape-toggle.collapsed { transform: rotate(180deg); }
-          .stape-content { 
+          .stape-content {
             padding: 16px; transition: all 0.3s ease; max-height: 400px; overflow: hidden;
           }
           .stape-content.collapsed { max-height: 0; padding: 0 16px; opacity: 0; }
           .stape-section { margin-bottom: 16px; }
           .stape-section:last-child { margin-bottom: 0; }
-          .stape-label { 
-            font-weight: 500; margin-bottom: 8px; color: #202124; 
+          .stape-label {
+            font-weight: 500; margin-bottom: 8px; color: #202124;
             display: flex; align-items: center;
           }
-          .stape-label::before { 
-            content: ''; width: 3px; height: 14px; background: #5f6368; 
+          .stape-label::before {
+            content: ''; width: 3px; height: 14px; background: #5f6368;
             margin-right: 8px; border-radius: 2px;
           }
           .stape-input {
             width: 100%; padding: 10px 12px; border: 1px solid #dadce0; border-radius: 6px;
             box-sizing: border-box; font-size: 14px; transition: border-color 0.2s ease;
           }
-          .stape-input:focus { 
-            border-color: #1a73e8; outline: none; 
+          .stape-input:focus {
+            border-color: #1a73e8; outline: none;
             box-shadow: 0 0 0 1px #1a73e8;
           }
-          .stape-types { 
-            max-height: 200px; overflow-y: auto; border: 1px solid #dadce0; 
+          .stape-types {
+            max-height: 200px; overflow-y: auto; border: 1px solid #dadce0;
             border-radius: 6px; background: #fafafa;
           }
           .stape-type {
@@ -189,16 +187,16 @@ export function previewUIFilters(isEnabled = true, environment = null) {
           .stape-type:hover { background: #f1f3f4; }
           .stape-type input { margin-right: 10px; }
           .stape-type label { cursor: pointer; flex: 1; }
-          .stape-count { 
-            margin-left: auto; color: #5f6368; font-size: 12px; 
+          .stape-count {
+            margin-left: auto; color: #5f6368; font-size: 12px;
             background: #f1f3f4; padding: 2px 6px; border-radius: 4px;
           }
-          .stape-close { 
-            cursor: pointer; font-size: 18px; color: #5f6368; 
+          .stape-close {
+            cursor: pointer; font-size: 18px; color: #5f6368;
             padding: 4px; border-radius: 4px; transition: all 0.2s ease;
           }
-          .stape-close:hover { 
-            color: #202124; background: #f1f3f4; 
+          .stape-close:hover {
+            color: #202124; background: #f1f3f4;
           }
           .stape-buttons {
             padding: 16px; background: #f8f9fa;
@@ -475,14 +473,10 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     }
   };
 
-  const gtmDoc = findGTMDoc();
-  if (gtmDoc) {
-    createUI();
-  }
-
   window.__stape_extension.previewUIFilters = {
     start: function () {
       filtersEnabled = true;
+      createUI();
       startMonitoring();
       checkAndUpdateFilter();
     },
