@@ -42,30 +42,7 @@ export function urlBlockParser(isEnabled = true) {
     };
 
     monitor.syntaxHighlightJSON = function (json) {
-      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      return json.replace(
-        /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
-        function (match, key, string, number, boolean, nullValue, brace, bracket, comma) {
-          if (key) {
-            return '<span class="json-key">' + key + ':</span>';
-          } else if (string) {
-            return '<span class="json-string">' + string + '</span>';
-          } else if (number) {
-            return '<span class="json-number">' + number + '</span>';
-          } else if (boolean) {
-            return '<span class="json-boolean">' + boolean + '</span>';
-          } else if (nullValue) {
-            return '<span class="json-null">' + nullValue + '</span>';
-          } else if (brace) {
-            return '<span class="json-brace">' + brace + '</span>';
-          } else if (bracket) {
-            return '<span class="json-bracket">' + bracket + '</span>';
-          } else if (comma) {
-            return '<span class="json-comma">,</span>';
-          }
-          return match;
-        }
-      );
+      return window.__stape_extension.jsonStylingHelper.syntaxHighlight(json, 'ubp');
     };
 
     monitor.createTableDisplay = function (method, url, params, _originalPre, _originalMethodCell) {
@@ -83,7 +60,7 @@ export function urlBlockParser(isEnabled = true) {
 
       const header = document.createElement('div');
       header.style.cssText =
-        'display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
+        'display: flex; gap: 6px; justify-content: space-between; align-items: center; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #dee2e6;';
 
       const methodSpan = document.createElement('span');
 
@@ -185,22 +162,7 @@ export function urlBlockParser(isEnabled = true) {
       objectContainer.style.cssText = 'display: none;';
 
       const objectPre = document.createElement('pre');
-      objectPre.style.cssText = `
-        background: #f8f9fa;
-        border: 1px solid #dee2e6;
-        border-radius: 6px;
-        padding: 20px;
-        margin: 0;
-        font-family: 'Fira Code', 'Monaco', 'Consolas', 'Courier New', monospace;
-        font-size: 13px;
-        line-height: 1.5;
-        color: #495057;
-        overflow-x: auto;
-        white-space: pre-wrap;
-        word-break: break-word;
-        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        position: relative;
-      `;
+      objectPre.style.cssText = window.__stape_extension.jsonStylingHelper.cssForContainer();
 
       const objectData = {
         method: method,
@@ -216,43 +178,14 @@ export function urlBlockParser(isEnabled = true) {
 
       let currentView = 'table';
 
-      if (!document.getElementById('stape-json-styles')) {
+      const stylesId = 'stape-url-block-parser-json-formatter-styles';
+      if (!document.getElementById(stylesId)) {
         const style = document.createElement('style');
-        style.id = 'stape-json-styles';
-        style.textContent = `
-          .json-key {
-            color: #e91e63 !important;
-            font-weight: bold !important;
-          }
-          .json-string {
-            color: #4caf50 !important;
-          }
-          .json-number {
-            color: #ff9800 !important;
-            font-weight: 500 !important;
-          }
-          .json-boolean {
-            color: #2196f3 !important;
-            font-weight: bold !important;
-          }
-          .json-null {
-            color: #9c27b0 !important;
-            font-weight: bold !important;
-          }
-          .json-brace {
-            color: #607d8b !important;
-            font-weight: bold !important;
-          }
-          .json-bracket {
-            color: #607d8b !important;
-            font-weight: bold !important;
-          }
-          .json-comma {
-            color: #757575 !important;
-          }
-        `;
+        style.id = stylesId;
+        style.textContent = window.__stape_extension.jsonStylingHelper.cssForJsonParts('ubp');
         document.head.appendChild(style);
       }
+
       const copyToClipboard = () => {
         const objectData = {
           method: method,

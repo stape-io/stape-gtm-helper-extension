@@ -2,7 +2,7 @@ export function jsonFormatter(isEnabled = true) {
   window.__stape_extension = window.__stape_extension || {};
 
   function JsonFormatterMonitor() {
-    const stylesId = 'json-formatter-styles';
+    const stylesId = 'stape-json-formatter-styles';
 
     const monitor = {
       observer: null,
@@ -17,9 +17,9 @@ export function jsonFormatter(isEnabled = true) {
 
       const styles = `
         .stape-json-formatted {
-          position: relative;
+          ${window.__stape_extension.jsonStylingHelper.cssForContainer()};
         }
-        
+
         .stape-json-copy-btn {
           position: absolute;
           top: 4px;
@@ -34,38 +34,9 @@ export function jsonFormatter(isEnabled = true) {
           opacity: 1;
           z-index: 1000;
         }
-        
-        /* JSON syntax highlighting styles - reused from UrlBlockParser */
-        .json-key {
-          color: #e91e63 !important;
-          font-weight: bold !important;
-        }
-        .json-string {
-          color: #4caf50 !important;
-        }
-        .json-number {
-          color: #ff9800 !important;
-          font-weight: 500 !important;
-        }
-        .json-boolean {
-          color: #2196f3 !important;
-          font-weight: bold !important;
-        }
-        .json-null {
-          color: #9c27b0 !important;
-          font-weight: bold !important;
-        }
-        .json-brace {
-          color: #607d8b !important;
-          font-weight: bold !important;
-        }
-        .json-bracket {
-          color: #607d8b !important;
-          font-weight: bold !important;
-        }
-        .json-comma {
-          color: #757575 !important;
-        }
+
+        ${window.__stape_extension.jsonStylingHelper.cssForJsonParts('jf')}
+        */
       `;
 
       styleEl = document.createElement('style');
@@ -101,34 +72,7 @@ export function jsonFormatter(isEnabled = true) {
     };
 
     monitor.syntaxHighlightJSON = function (json) {
-      if (window.__stape_extension && window.__stape_extension.urlBlocksParser) {
-      }
-
-      json = json.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-
-      return json.replace(
-        /("(?:[^"\\]|\\.)*")\s*:|("(?:[^"\\]|\\.)*")|(\b-?\d+(?:\.\d+)?(?:[eE][+-]?\d+)?)\b|(\b(?:true|false)\b)|(\bnull\b)|([{}])|(\[|\])|,/g,
-        function (match, key, string, number, boolean, nullValue, brace, bracket, comma) {
-          if (key) {
-            return '<span class="json-key">' + key + ':</span>';
-          } else if (string) {
-            return '<span class="json-string">' + string + '</span>';
-          } else if (number) {
-            return '<span class="json-number">' + number + '</span>';
-          } else if (boolean) {
-            return '<span class="json-boolean">' + boolean + '</span>';
-          } else if (nullValue) {
-            return '<span class="json-null">' + nullValue + '</span>';
-          } else if (brace) {
-            return '<span class="json-brace">' + brace + '</span>';
-          } else if (bracket) {
-            return '<span class="json-bracket">' + bracket + '</span>';
-          } else if (comma) {
-            return '<span class="json-comma">,</span>';
-          }
-          return match;
-        }
-      );
+      return window.__stape_extension.jsonStylingHelper.syntaxHighlight(json, 'jf');
     };
 
     monitor.autoFormatJsonCell = function (preElement, originalJson) {
