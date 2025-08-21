@@ -136,10 +136,13 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       container.innerHTML = `
         <style>
           [id^="stape-filter"] {
+            --drag-width: 28px;
             position: fixed; top: ${positionTop}px; right: 20px; width: 320px;
             background: white; border: 1px solid #dadce0; border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: 'Google Sans', Roboto, Arial, sans-serif;
             font-size: 14px; z-index: ${zIndex}; overflow: hidden; transition: all 0.3s ease;
+            padding-left: var(--drag-width); /* ← make room for the drag area */
+            box-sizing: border-box;
           }
           .stape-header {
             padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #dadce0;
@@ -229,7 +232,50 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             opacity: 0.4; cursor: not-allowed; pointer-events: none;
             box-shadow: none; transform: none;
           }
+
+          /* Left drag area outside the header */
+          .stape-drag-area {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: var(--drag-width);
+            display: flex; align-items: center; justify-content: center;
+            background: #f8f9fa;
+            border-right: 1px solid #dadce0;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+          }
+
+          /* Dot pattern inside the drag area */
+          /*
+          .stape-drag-dots {
+            width: 10px; height: 14px; opacity: 0.6;
+            background-image: radial-gradient(currentColor 1px, transparent 1px);
+            background-size: 4px 4px;
+            background-position: 0 0;
+          }
+          */
+
+          .stape-drag-dots {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5f6368;   /* match other icons/text */
+            opacity: 0.5;
+          }
+          .stape-drag-dots svg {
+            width: 24px;
+            height: 24px;
+          }
+
+          /* Optional hover affordance */
+          .stape-drag-area:hover { background: #dee0e0ff; }
         </style>
+        <div class="stape-drag-area" aria-hidden="true" title="Drag">
+          <span class="stape-drag-dots" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </span>
+        </div>
         <div class="stape-header">
           <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel} Filter</div>
           <div style="display: flex; align-items: center; gap: 10px;">
