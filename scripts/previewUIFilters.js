@@ -143,6 +143,7 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             font-size: 14px; z-index: ${zIndex}; overflow: hidden; transition: all 0.3s ease;
             padding-left: var(--drag-width); /* ← make room for the drag area */
             box-sizing: border-box;
+            will-change: transform; /* smoother drag */
           }
           .stape-header {
             padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #dadce0;
@@ -194,13 +195,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             margin-left: auto; color: #5f6368; font-size: 12px;
             background: #f1f3f4; padding: 2px 6px; border-radius: 4px;
           }
-          .stape-close {
-            cursor: pointer; font-size: 18px; color: #5f6368;
-            padding: 4px; border-radius: 4px; transition: all 0.2s ease;
-          }
-          .stape-close:hover {
-            color: #202124; background: #f1f3f4;
-          }
           .stape-buttons {
             padding: 16px; background: #f8f9fa;
             border-top: 1px solid #e8eaed;
@@ -245,17 +239,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             user-select: none;
             touch-action: none;
           }
-
-          /* Dot pattern inside the drag area */
-          /*
-          .stape-drag-dots {
-            width: 10px; height: 14px; opacity: 0.6;
-            background-image: radial-gradient(currentColor 1px, transparent 1px);
-            background-size: 4px 4px;
-            background-position: 0 0;
-          }
-          */
-
           .stape-drag-dots {
             display: flex;
             align-items: center;
@@ -267,6 +250,9 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             width: 24px;
             height: 24px;
           }
+
+          /* NEW - last one for lag */
+          .stape-dragging { transition: none !important; }
 
           /* Optional hover affordance */
           .stape-drag-area:hover { background: #dee0e0ff; }
@@ -320,26 +306,19 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
       currentGtmDoc.body.appendChild(container);
 
-      const header = container.querySelector('.stape-header');
-      const closeBtn = container.querySelector('.stape-close');
+      // Drag-and-drop wiring
+      const dragHandle = container.querySelector('.stape-drag-area'); // ← only this area is draggable
+      makeDraggable(container, dragHandle, currentGtmDoc);
 
+      const header = container.querySelector('.stape-header');
       if (header) {
         header.addEventListener('click', (e) => {
-          if (closeBtn && e.target === closeBtn) return;
-
           isCollapsed = !isCollapsed;
           const content = container.querySelector('.stape-content');
           const toggle = container.querySelector('.stape-toggle');
 
           if (content) content.classList.toggle('collapsed', isCollapsed);
           if (toggle) toggle.classList.toggle('collapsed', isCollapsed);
-        });
-      }
-
-      if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          container.remove();
         });
       }
 
@@ -390,6 +369,167 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       resetAllFilters();
     }
   };
+
+  function makeDraggable(el, handle, doc) {
+    if (!el || !handle || !doc) return;
+
+    const win = doc.defaultView || window;
+    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
+    const POS_KEY = 'stape-filter-pos';
+
+    el.style.position = el.style.position || 'fixed';
+    if (!el.style.left && !el.style.right) el.style.right = '20px';
+
+    // Apply saved position
+    try {
+      const saved = JSON.parse(win.localStorage.getItem(POS_KEY) || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        el.style.left = `${saved.x}px`;
+        el.style.top = `${saved.y}px`;
+        el.style.right = 'auto';
+      }
+    } catch {}
+
+    // === Drag state ===
+    let dragging = false;
+    let startX = 0;
+    let startY = 0;
+    let baseLeft = 0;
+    let baseTop = 0; // committed left/top at drag start
+    let w = 0;
+    let h = 0;
+    let vw = 0;
+    let vh = 0;
+
+    const beginDrag = (clientX, clientY) => {
+      dragging = true;
+      el.classList.add('stape-dragging');
+      handle.style.cursor = 'grabbing';
+
+      const rect = el.getBoundingClientRect();
+      if (!el.style.left) {
+        el.style.left = `${rect.left}px`;
+        el.style.top = `${rect.top}px`;
+        el.style.right = 'auto';
+      }
+
+      baseLeft = parseFloat(el.style.left) || rect.left;
+      baseTop = parseFloat(el.style.top) || rect.top;
+      w = el.offsetWidth;
+      h = el.offsetHeight;
+      vw = win.innerWidth;
+      vh = win.innerHeight;
+
+      startX = clientX;
+      startY = clientY;
+      el.style.transform = 'translate3d(0,0,0)';
+    };
+
+    const doDrag = (clientX, clientY) => {
+      if (!dragging) return;
+
+      const dx = clientX - startX;
+      const dy = clientY - startY;
+
+      const nextLeft = clamp(baseLeft + dx, 0, Math.max(0, vw - w));
+      const nextTop = clamp(baseTop + dy, 0, Math.max(0, vh - h));
+
+      const tx = nextLeft - baseLeft;
+      const ty = nextTop - baseTop;
+      el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+    };
+
+    const endDrag = () => {
+      if (!dragging) return;
+      dragging = false;
+      el.classList.remove('stape-dragging');
+      handle.style.cursor = 'grab';
+
+      // Commit final left/top once; clear transform
+      const m = el.style.transform.match(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px,/);
+      const dx = m ? parseFloat(m[1]) : 0;
+      const dy = m ? parseFloat(m[2]) : 0;
+      const finalLeft = baseLeft + dx;
+      const finalTop = baseTop + dy;
+
+      el.style.transform = 'translate3d(0,0,0)';
+      el.style.left = `${finalLeft}px`;
+      el.style.top = `${finalTop}px`;
+
+      try {
+        win.localStorage.setItem(POS_KEY, JSON.stringify({ x: finalLeft, y: finalTop }));
+      } catch {}
+    };
+
+    // Pointer events (primary)
+    const onPointerDown = (e) => {
+      if (e.button !== undefined && e.button !== 0) return;
+      handle.setPointerCapture?.(e.pointerId);
+      beginDrag(e.clientX, e.clientY);
+      e.preventDefault();
+    };
+    const onPointerMove = (e) => {
+      const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      const last = list && list.length ? list[list.length - 1] : e;
+      doDrag(last.clientX, last.clientY);
+    };
+    const onPointerUp = (e) => {
+      handle.releasePointerCapture?.(e.pointerId);
+      endDrag();
+    };
+
+    // Mouse/touch fallbacks
+    const onMouseDown = (e) => {
+      if (e.button === 0) {
+        beginDrag(e.clientX, e.clientY);
+        e.preventDefault();
+      }
+    };
+    const onMouseMove = (e) => doDrag(e.clientX, e.clientY);
+    const onMouseUp = () => endDrag();
+
+    const onTouchStart = (e) => {
+      const t = e.touches[0];
+      if (t) beginDrag(t.clientX, t.clientY);
+    };
+    const onTouchMove = (e) => {
+      const t = e.touches[0];
+      if (t) doDrag(t.clientX, t.clientY);
+    };
+    const onTouchEnd = () => endDrag();
+
+    // Attach to the *iframe document*
+    handle.addEventListener('pointerdown', onPointerDown);
+    doc.addEventListener('pointermove', onPointerMove, { passive: true });
+    doc.addEventListener('pointerup', onPointerUp, { passive: true });
+
+    handle.addEventListener('mousedown', onMouseDown);
+    doc.addEventListener('mousemove', onMouseMove);
+    doc.addEventListener('mouseup', onMouseUp);
+
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    doc.addEventListener('touchmove', onTouchMove, { passive: false });
+    doc.addEventListener('touchend', onTouchEnd);
+
+    // Keep inside viewport if size changes
+    win.addEventListener('resize', () => {
+      // Re-clamp committed left/top (no transform during idle)
+      const left = parseFloat(el.style.left) || 0;
+      const top = parseFloat(el.style.top) || 0;
+      vw = win.innerWidth;
+      vh = win.innerHeight;
+      w = el.offsetWidth;
+      h = el.offsetHeight;
+      const clampedLeft = clamp(left, 0, Math.max(0, vw - w));
+      const clampedTop = clamp(top, 0, Math.max(0, vh - h));
+      el.style.left = `${clampedLeft}px`;
+      el.style.top = `${clampedTop}px`;
+    });
+
+    // Visual affordance
+    handle.style.cursor = 'grab';
+    handle.style.touchAction = 'none';
+  }
 
   const resetAllFilters = () => {
     searchQuery = '';
