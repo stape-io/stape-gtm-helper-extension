@@ -123,7 +123,8 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
       const types = getTypes();
 
-      const positionTop = environment === 'GTMTA' ? 130 : 80;
+      const positionTop = environment === 'GTMTA' ? 8 : 80;
+      const positionRight = environment === 'GTMTA' ? 150 : 20;
       const zIndex = environment === 'GTMTA' ? 45 : 5;
 
       const tabLabel = currentTab === 'tags' ? 'Tags' : 'Variables';
@@ -137,7 +138,7 @@ export function previewUIFilters(isEnabled = true, environment = null) {
         <style>
           [id^="stape-filter"] {
             --drag-width: 28px;
-            position: fixed; top: ${positionTop}px; right: 20px; width: 320px;
+            position: fixed; top: ${positionTop}px; right: ${positionRight}px; width: 320px;
             background: white; border: 1px solid #dadce0; border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: 'Google Sans', Roboto, Arial, sans-serif;
             font-size: 14px; z-index: ${zIndex}; overflow: hidden; transition: all 0.3s ease;
@@ -243,18 +244,14 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #5f6368;   /* match other icons/text */
+            color: #5f6368;
             opacity: 0.5;
           }
           .stape-drag-dots svg {
             width: 24px;
             height: 24px;
           }
-
-          /* NEW - last one for lag */
           .stape-dragging { transition: none !important; }
-
-          /* Optional hover affordance */
           .stape-drag-area:hover { background: #dee0e0ff; }
         </style>
         <div class="stape-drag-area" aria-hidden="true" title="Drag">
@@ -306,8 +303,7 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
       currentGtmDoc.body.appendChild(container);
 
-      // Drag-and-drop wiring
-      const dragHandle = container.querySelector('.stape-drag-area'); // ← only this area is draggable
+      const dragHandle = container.querySelector('.stape-drag-area');
       makeDraggable(container, dragHandle, currentGtmDoc);
 
       const header = container.querySelector('.stape-header');
@@ -375,23 +371,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
     const win = doc.defaultView || window;
     const STORAGE_POSITION_KEY = 'stape-filter-pos';
-
-    handle.style.cursor = 'grab';
-    handle.style.touchAction = 'none';
-    handle.style.userSelect = 'none';
-
-    filterElement.style.position = filterElement.style.position || 'fixed';
-    if (!filterElement.style.left && !filterElement.style.right) filterElement.style.right = '20px';
-
-    try {
-      const saved = JSON.parse(win.localStorage.getItem(STORAGE_POSITION_KEY) || 'null');
-      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-        filterElement.style.left = `${saved.x}px`;
-        filterElement.style.top = `${saved.y}px`;
-        filterElement.style.right = 'auto';
-      }
-    } catch {}
-
     const dragState = {
       isDragging: false,
       initialX: 0,
@@ -532,11 +511,9 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       const currentX = filterElement.offsetLeft;
       const currentY = filterElement.offsetTop;
 
-      // Clamp the current position to the new viewport dimensions
       const newX = Math.max(0, Math.min(currentX, maxX));
       const newY = Math.max(0, Math.min(currentY, maxY));
 
-      // Apply the new position if it has changed
       if (newX !== currentX) filterElement.style.left = `${newX}px`;
       if (newY !== currentY) filterElement.style.top = `${newY}px`;
 
@@ -545,10 +522,18 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       } catch {}
     };
 
+    try {
+      const saved = JSON.parse(win.localStorage.getItem(STORAGE_POSITION_KEY) || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        filterElement.style.left = `${saved.x}px`;
+        filterElement.style.top = `${saved.y}px`;
+        filterElement.style.right = 'auto';
+      }
+    } catch {}
+
     handle.addEventListener('pointerdown', onPointerDown);
     handle.addEventListener('mousedown', onMouseDown);
     handle.addEventListener('touchstart', onTouchStart, { passive: true });
-
     win.addEventListener('resize', ensureInViewport);
   }
 
