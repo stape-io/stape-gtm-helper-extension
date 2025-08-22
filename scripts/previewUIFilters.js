@@ -370,103 +370,100 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     }
   };
 
-  function makeDraggable(el, handle, doc) {
-    if (!el || !handle || !doc) return;
+  function makeDraggable(filterElement, handle, doc) {
+    if (!filterElement || !handle || !doc) return;
 
     const win = doc.defaultView || window;
-    const clamp = (v, min, max) => Math.max(min, Math.min(max, v));
-    const POS_KEY = 'stape-filter-pos';
+    const STORAGE_POSITION_KEY = 'stape-filter-pos';
 
-    el.style.position = el.style.position || 'fixed';
-    if (!el.style.left && !el.style.right) el.style.right = '20px';
+    handle.style.cursor = 'grab';
+    handle.style.touchAction = 'none';
+    handle.style.userSelect = 'none';
 
-    // Apply saved position
+    filterElement.style.position = filterElement.style.position || 'fixed';
+    if (!filterElement.style.left && !filterElement.style.right) filterElement.style.right = '20px';
+
     try {
-      const saved = JSON.parse(win.localStorage.getItem(POS_KEY) || 'null');
+      const saved = JSON.parse(win.localStorage.getItem(STORAGE_POSITION_KEY) || 'null');
       if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
-        el.style.left = `${saved.x}px`;
-        el.style.top = `${saved.y}px`;
-        el.style.right = 'auto';
+        filterElement.style.left = `${saved.x}px`;
+        filterElement.style.top = `${saved.y}px`;
+        filterElement.style.right = 'auto';
       }
     } catch {}
 
-    // === Drag state ===
-    let dragging = false;
-    let startX = 0;
-    let startY = 0;
-    let baseLeft = 0;
-    let baseTop = 0; // committed left/top at drag start
-    let w = 0;
-    let h = 0;
-    let vw = 0;
-    let vh = 0;
+    const dragState = {
+      isDragging: false,
+      initialX: 0,
+      initialY: 0,
+      offsetX: 0,
+      offsetY: 0
+    };
 
     const beginDrag = (clientX, clientY) => {
-      dragging = true;
-      el.classList.add('stape-dragging');
+      dragState.isDragging = true;
+      filterElement.classList.add('stape-dragging');
       handle.style.cursor = 'grabbing';
 
-      const rect = el.getBoundingClientRect();
-      if (!el.style.left) {
-        el.style.left = `${rect.left}px`;
-        el.style.top = `${rect.top}px`;
-        el.style.right = 'auto';
-      }
+      dragState.initialX = clientX;
+      dragState.initialY = clientY;
 
-      baseLeft = parseFloat(el.style.left) || rect.left;
-      baseTop = parseFloat(el.style.top) || rect.top;
-      w = el.offsetWidth;
-      h = el.offsetHeight;
-      vw = win.innerWidth;
-      vh = win.innerHeight;
-
-      startX = clientX;
-      startY = clientY;
-      el.style.transform = 'translate3d(0,0,0)';
+      dragState.offsetX = filterElement.offsetLeft;
+      dragState.offsetY = filterElement.offsetTop;
     };
 
     const doDrag = (clientX, clientY) => {
-      if (!dragging) return;
+      if (!dragState.isDragging) return;
 
-      const dx = clientX - startX;
-      const dy = clientY - startY;
+      const viewportWidth = win.innerWidth;
+      const viewportHeight = win.innerHeight;
+      const elementWidth = filterElement.offsetWidth;
+      const elementHeight = filterElement.offsetHeight;
 
-      const nextLeft = clamp(baseLeft + dx, 0, Math.max(0, vw - w));
-      const nextTop = clamp(baseTop + dy, 0, Math.max(0, vh - h));
+      const maxX = viewportWidth - elementWidth;
+      const maxY = viewportHeight - elementHeight;
 
-      const tx = nextLeft - baseLeft;
-      const ty = nextTop - baseTop;
-      el.style.transform = `translate3d(${tx}px, ${ty}px, 0)`;
+      const deltaX = clientX - dragState.initialX;
+      const deltaY = clientY - dragState.initialY;
+
+      let newX = dragState.offsetX + deltaX;
+      let newY = dragState.offsetY + deltaY;
+
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      filterElement.style.left = `${newX}px`;
+      filterElement.style.top = `${newY}px`;
     };
 
     const endDrag = () => {
-      if (!dragging) return;
-      dragging = false;
-      el.classList.remove('stape-dragging');
+      if (!dragState.isDragging) return;
+
+      dragState.isDragging = false;
+      filterElement.classList.remove('stape-dragging');
       handle.style.cursor = 'grab';
 
-      // Commit final left/top once; clear transform
-      const m = el.style.transform.match(/translate3d\(([-\d.]+)px,\s*([-\d.]+)px,/);
-      const dx = m ? parseFloat(m[1]) : 0;
-      const dy = m ? parseFloat(m[2]) : 0;
-      const finalLeft = baseLeft + dx;
-      const finalTop = baseTop + dy;
-
-      el.style.transform = 'translate3d(0,0,0)';
-      el.style.left = `${finalLeft}px`;
-      el.style.top = `${finalTop}px`;
-
       try {
-        win.localStorage.setItem(POS_KEY, JSON.stringify({ x: finalLeft, y: finalTop }));
+        win.localStorage.setItem(
+          STORAGE_POSITION_KEY,
+          JSON.stringify({
+            x: filterElement.offsetLeft,
+            y: filterElement.offsetTop
+          })
+        );
       } catch {}
     };
 
     // Pointer events (primary)
     const onPointerDown = (e) => {
-      if (e.button !== undefined && e.button !== 0) return;
+      if (e.button !== 0) return;
+
       handle.setPointerCapture?.(e.pointerId);
       beginDrag(e.clientX, e.clientY);
       e.preventDefault();
+
+      doc.addEventListener('pointermove', onPointerMove, { passive: true });
+      doc.addEventListener('pointerup', onPointerUp, { passive: true });
     };
     const onPointerMove = (e) => {
       const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
@@ -476,59 +473,83 @@ export function previewUIFilters(isEnabled = true, environment = null) {
     const onPointerUp = (e) => {
       handle.releasePointerCapture?.(e.pointerId);
       endDrag();
+
+      doc.removeEventListener('pointermove', onPointerMove, { passive: true });
+      doc.removeEventListener('pointerup', onPointerUp, { passive: true });
     };
 
     // Mouse/touch fallbacks
     const onMouseDown = (e) => {
-      if (e.button === 0) {
-        beginDrag(e.clientX, e.clientY);
-        e.preventDefault();
-      }
+      if (e.button !== 0) return;
+
+      beginDrag(e.clientX, e.clientY);
+      e.preventDefault();
+
+      doc.addEventListener('mousemove', onMouseMove);
+      doc.addEventListener('mouseup', onMouseUp);
     };
-    const onMouseMove = (e) => doDrag(e.clientX, e.clientY);
-    const onMouseUp = () => endDrag();
+    const onMouseMove = (e) => {
+      doDrag(e.clientX, e.clientY);
+    };
+    const onMouseUp = (e) => {
+      endDrag();
+
+      doc.removeEventListener('mousemove', onMouseMove);
+      doc.removeEventListener('mouseup', onMouseUp);
+    };
 
     const onTouchStart = (e) => {
       const t = e.touches[0];
-      if (t) beginDrag(t.clientX, t.clientY);
+      if (!t) return;
+
+      beginDrag(t.clientX, t.clientY);
+
+      doc.addEventListener('touchmove', onTouchMove, { passive: false });
+      doc.addEventListener('touchend', onTouchEnd);
     };
     const onTouchMove = (e) => {
       const t = e.touches[0];
-      if (t) doDrag(t.clientX, t.clientY);
+      if (!t) return;
+
+      doDrag(t.clientX, t.clientY);
     };
-    const onTouchEnd = () => endDrag();
+    const onTouchEnd = () => {
+      endDrag();
 
-    // Attach to the *iframe document*
+      doc.removeEventListener('touchmove', onTouchMove, { passive: false });
+      doc.removeEventListener('touchend', onTouchEnd);
+    };
+
+    const ensureInViewport = () => {
+      const viewportWidth = win.innerWidth;
+      const viewportHeight = win.innerHeight;
+      const elementWidth = filterElement.offsetWidth;
+      const elementHeight = filterElement.offsetHeight;
+
+      const maxX = viewportWidth - elementWidth;
+      const maxY = viewportHeight - elementHeight;
+
+      const currentX = filterElement.offsetLeft;
+      const currentY = filterElement.offsetTop;
+
+      // Clamp the current position to the new viewport dimensions
+      const newX = Math.max(0, Math.min(currentX, maxX));
+      const newY = Math.max(0, Math.min(currentY, maxY));
+
+      // Apply the new position if it has changed
+      if (newX !== currentX) filterElement.style.left = `${newX}px`;
+      if (newY !== currentY) filterElement.style.top = `${newY}px`;
+
+      try {
+        win.localStorage.setItem(STORAGE_POSITION_KEY, JSON.stringify({ x: newX, y: newY }));
+      } catch {}
+    };
+
     handle.addEventListener('pointerdown', onPointerDown);
-    doc.addEventListener('pointermove', onPointerMove, { passive: true });
-    doc.addEventListener('pointerup', onPointerUp, { passive: true });
-
     handle.addEventListener('mousedown', onMouseDown);
-    doc.addEventListener('mousemove', onMouseMove);
-    doc.addEventListener('mouseup', onMouseUp);
-
     handle.addEventListener('touchstart', onTouchStart, { passive: true });
-    doc.addEventListener('touchmove', onTouchMove, { passive: false });
-    doc.addEventListener('touchend', onTouchEnd);
 
-    // Keep inside viewport if size changes
-    win.addEventListener('resize', () => {
-      // Re-clamp committed left/top (no transform during idle)
-      const left = parseFloat(el.style.left) || 0;
-      const top = parseFloat(el.style.top) || 0;
-      vw = win.innerWidth;
-      vh = win.innerHeight;
-      w = el.offsetWidth;
-      h = el.offsetHeight;
-      const clampedLeft = clamp(left, 0, Math.max(0, vw - w));
-      const clampedTop = clamp(top, 0, Math.max(0, vh - h));
-      el.style.left = `${clampedLeft}px`;
-      el.style.top = `${clampedTop}px`;
-    });
-
-    // Visual affordance
-    handle.style.cursor = 'grab';
-    handle.style.touchAction = 'none';
+    win.addEventListener('resize', ensureInViewport);
   }
 
   const resetAllFilters = () => {
