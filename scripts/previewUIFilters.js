@@ -123,7 +123,8 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
       const types = getTypes();
 
-      const positionTop = environment === 'GTMTA' ? 130 : 80;
+      const positionTop = environment === 'GTMTA' ? 8 : 80;
+      const positionRight = environment === 'GTMTA' ? 150 : 20;
       const zIndex = environment === 'GTMTA' ? 45 : 5;
 
       const tabLabel = currentTab === 'tags' ? 'Tags' : 'Variables';
@@ -136,10 +137,14 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       container.innerHTML = `
         <style>
           [id^="stape-filter"] {
-            position: fixed; top: ${positionTop}px; right: 20px; width: 320px;
+            --drag-width: 28px;
+            position: fixed; top: ${positionTop}px; right: ${positionRight}px; width: 320px;
             background: white; border: 1px solid #dadce0; border-radius: 8px;
             box-shadow: 0 2px 10px rgba(0,0,0,0.15); font-family: 'Google Sans', Roboto, Arial, sans-serif;
             font-size: 14px; z-index: ${zIndex}; overflow: hidden; transition: all 0.3s ease;
+            padding-left: var(--drag-width); /* ← make room for the drag area */
+            box-sizing: border-box;
+            will-change: transform; /* smoother drag */
           }
           .stape-header {
             padding: 12px 16px; background: #f8f9fa; border-bottom: 1px solid #dadce0;
@@ -191,13 +196,6 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             margin-left: auto; color: #5f6368; font-size: 12px;
             background: #f1f3f4; padding: 2px 6px; border-radius: 4px;
           }
-          .stape-close {
-            cursor: pointer; font-size: 18px; color: #5f6368;
-            padding: 4px; border-radius: 4px; transition: all 0.2s ease;
-          }
-          .stape-close:hover {
-            color: #202124; background: #f1f3f4;
-          }
           .stape-buttons {
             padding: 16px; background: #f8f9fa;
             border-top: 1px solid #e8eaed;
@@ -229,7 +227,38 @@ export function previewUIFilters(isEnabled = true, environment = null) {
             opacity: 0.4; cursor: not-allowed; pointer-events: none;
             box-shadow: none; transform: none;
           }
+
+          /* Left drag area outside the header */
+          .stape-drag-area {
+            position: absolute;
+            left: 0; top: 0; bottom: 0;
+            width: var(--drag-width);
+            display: flex; align-items: center; justify-content: center;
+            background: #f8f9fa;
+            border-right: 1px solid #dadce0;
+            cursor: grab;
+            user-select: none;
+            touch-action: none;
+          }
+          .stape-drag-dots {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #5f6368;
+            opacity: 0.5;
+          }
+          .stape-drag-dots svg {
+            width: 24px;
+            height: 24px;
+          }
+          .stape-dragging { transition: none !important; }
+          .stape-drag-area:hover { background: #dee0e0ff; }
         </style>
+        <div class="stape-drag-area" aria-hidden="true" title="Drag">
+          <span class="stape-drag-dots" aria-hidden="true">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24"><path d="M0 0h24v24H0V0z" fill="none"/><path d="M11 18c0 1.1-.9 2-2 2s-2-.9-2-2 .9-2 2-2 2 .9 2 2zm-2-8c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm6 4c1.1 0 2-.9 2-2s-.9-2-2-2-2 .9-2 2 .9 2 2 2zm0 2c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z"/></svg>
+          </span>
+        </div>
         <div class="stape-header">
           <div class="stape-title"><img width="16px" style="margin-right: 1em" src="https://cdn.stape.io/i/688a4bb90eaac838702555.ico"/>${tabLabel} Filter</div>
           <div style="display: flex; align-items: center; gap: 10px;">
@@ -274,26 +303,18 @@ export function previewUIFilters(isEnabled = true, environment = null) {
 
       currentGtmDoc.body.appendChild(container);
 
-      const header = container.querySelector('.stape-header');
-      const closeBtn = container.querySelector('.stape-close');
+      const dragHandle = container.querySelector('.stape-drag-area');
+      makeDraggable(container, dragHandle, currentGtmDoc);
 
+      const header = container.querySelector('.stape-header');
       if (header) {
         header.addEventListener('click', (e) => {
-          if (closeBtn && e.target === closeBtn) return;
-
           isCollapsed = !isCollapsed;
           const content = container.querySelector('.stape-content');
           const toggle = container.querySelector('.stape-toggle');
 
           if (content) content.classList.toggle('collapsed', isCollapsed);
           if (toggle) toggle.classList.toggle('collapsed', isCollapsed);
-        });
-      }
-
-      if (closeBtn) {
-        closeBtn.addEventListener('click', (e) => {
-          e.stopPropagation();
-          container.remove();
         });
       }
 
@@ -344,6 +365,177 @@ export function previewUIFilters(isEnabled = true, environment = null) {
       resetAllFilters();
     }
   };
+
+  function makeDraggable(filterElement, handle, doc) {
+    if (!filterElement || !handle || !doc) return;
+
+    const win = doc.defaultView || window;
+    const STORAGE_POSITION_KEY = 'stape-filter-pos';
+    const dragState = {
+      isDragging: false,
+      initialX: 0,
+      initialY: 0,
+      offsetX: 0,
+      offsetY: 0
+    };
+
+    const beginDrag = (clientX, clientY) => {
+      dragState.isDragging = true;
+      filterElement.classList.add('stape-dragging');
+      handle.style.cursor = 'grabbing';
+
+      dragState.initialX = clientX;
+      dragState.initialY = clientY;
+
+      dragState.offsetX = filterElement.offsetLeft;
+      dragState.offsetY = filterElement.offsetTop;
+    };
+
+    const doDrag = (clientX, clientY) => {
+      if (!dragState.isDragging) return;
+
+      const viewportWidth = win.innerWidth;
+      const viewportHeight = win.innerHeight;
+      const elementWidth = filterElement.offsetWidth;
+      const elementHeight = filterElement.offsetHeight;
+
+      const maxX = viewportWidth - elementWidth;
+      const maxY = viewportHeight - elementHeight;
+
+      const deltaX = clientX - dragState.initialX;
+      const deltaY = clientY - dragState.initialY;
+
+      let newX = dragState.offsetX + deltaX;
+      let newY = dragState.offsetY + deltaY;
+
+      newX = Math.max(0, Math.min(newX, maxX));
+      newY = Math.max(0, Math.min(newY, maxY));
+
+      filterElement.style.left = `${newX}px`;
+      filterElement.style.top = `${newY}px`;
+    };
+
+    const endDrag = () => {
+      if (!dragState.isDragging) return;
+
+      dragState.isDragging = false;
+      filterElement.classList.remove('stape-dragging');
+      handle.style.cursor = 'grab';
+
+      try {
+        win.localStorage.setItem(
+          STORAGE_POSITION_KEY,
+          JSON.stringify({
+            x: filterElement.offsetLeft,
+            y: filterElement.offsetTop
+          })
+        );
+      } catch {}
+    };
+
+    // Pointer events (primary)
+    const onPointerDown = (e) => {
+      if (e.button !== 0) return;
+
+      handle.setPointerCapture?.(e.pointerId);
+      beginDrag(e.clientX, e.clientY);
+      e.preventDefault();
+
+      doc.addEventListener('pointermove', onPointerMove, { passive: true });
+      doc.addEventListener('pointerup', onPointerUp, { passive: true });
+    };
+    const onPointerMove = (e) => {
+      const list = e.getCoalescedEvents ? e.getCoalescedEvents() : null;
+      const last = list && list.length ? list[list.length - 1] : e;
+      doDrag(last.clientX, last.clientY);
+    };
+    const onPointerUp = (e) => {
+      handle.releasePointerCapture?.(e.pointerId);
+      endDrag();
+
+      doc.removeEventListener('pointermove', onPointerMove, { passive: true });
+      doc.removeEventListener('pointerup', onPointerUp, { passive: true });
+    };
+
+    // Mouse/touch fallbacks
+    const onMouseDown = (e) => {
+      if (e.button !== 0) return;
+
+      beginDrag(e.clientX, e.clientY);
+      e.preventDefault();
+
+      doc.addEventListener('mousemove', onMouseMove);
+      doc.addEventListener('mouseup', onMouseUp);
+    };
+    const onMouseMove = (e) => {
+      doDrag(e.clientX, e.clientY);
+    };
+    const onMouseUp = (e) => {
+      endDrag();
+
+      doc.removeEventListener('mousemove', onMouseMove);
+      doc.removeEventListener('mouseup', onMouseUp);
+    };
+
+    const onTouchStart = (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+
+      beginDrag(t.clientX, t.clientY);
+
+      doc.addEventListener('touchmove', onTouchMove, { passive: false });
+      doc.addEventListener('touchend', onTouchEnd);
+    };
+    const onTouchMove = (e) => {
+      const t = e.touches[0];
+      if (!t) return;
+
+      doDrag(t.clientX, t.clientY);
+    };
+    const onTouchEnd = () => {
+      endDrag();
+
+      doc.removeEventListener('touchmove', onTouchMove, { passive: false });
+      doc.removeEventListener('touchend', onTouchEnd);
+    };
+
+    const ensureInViewport = () => {
+      const viewportWidth = win.innerWidth;
+      const viewportHeight = win.innerHeight;
+      const elementWidth = filterElement.offsetWidth;
+      const elementHeight = filterElement.offsetHeight;
+
+      const maxX = viewportWidth - elementWidth;
+      const maxY = viewportHeight - elementHeight;
+
+      const currentX = filterElement.offsetLeft;
+      const currentY = filterElement.offsetTop;
+
+      const newX = Math.max(0, Math.min(currentX, maxX));
+      const newY = Math.max(0, Math.min(currentY, maxY));
+
+      if (newX !== currentX) filterElement.style.left = `${newX}px`;
+      if (newY !== currentY) filterElement.style.top = `${newY}px`;
+
+      try {
+        win.localStorage.setItem(STORAGE_POSITION_KEY, JSON.stringify({ x: newX, y: newY }));
+      } catch {}
+    };
+
+    try {
+      const saved = JSON.parse(win.localStorage.getItem(STORAGE_POSITION_KEY) || 'null');
+      if (saved && typeof saved.x === 'number' && typeof saved.y === 'number') {
+        filterElement.style.left = `${saved.x}px`;
+        filterElement.style.top = `${saved.y}px`;
+        filterElement.style.right = 'auto';
+      }
+    } catch {}
+
+    handle.addEventListener('pointerdown', onPointerDown);
+    handle.addEventListener('mousedown', onMouseDown);
+    handle.addEventListener('touchstart', onTouchStart, { passive: true });
+    win.addEventListener('resize', ensureInViewport);
+  }
 
   const resetAllFilters = () => {
     searchQuery = '';
