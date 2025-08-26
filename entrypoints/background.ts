@@ -6,6 +6,7 @@ import { consentStatusMonitor } from '../scripts/consentStatusMonitor.js';
 import { showStapeContainerId } from '../scripts/showStapeContainerId.js';
 import { previewUIFilters } from '../scripts/previewUIFilters.js';
 import { jsonFormatter } from '../scripts/jsonFormatter.js';
+import { jsonStylingHelper } from '../scripts/helpers/jsonStylingHelper.js';
 import { storage } from '@wxt-dev/storage';
 
 // GTM environment detection rules
@@ -150,6 +151,8 @@ export default defineBackground(() => {
 
         // Inject scripts based on feature configuration
         if (settings?.features && Array.isArray(settings.features)) {
+          await injectScript(details.tabId, jsonStylingHelper, true, isGTMEnv.environment);
+
           for (const feature of settings.features) {
             if (
               feature.environments.includes(isGTMEnv.environment) &&
