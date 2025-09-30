@@ -28,12 +28,12 @@ export function tagStatusColoring(isEnabled = true) {
         }
         .stape-status-failed .gtm-debug-card__subtitle::before {
           content: "⚠️";
-          display: inline-block;          
+          display: inline-block;
           font-size: 14px;
         }
         .stape-status-failed .gtm-debug-card__subtitle {
           background-color: #dc354599 !important;
-          color: white !important;          
+          color: white !important;
         }
       `;
 
@@ -60,33 +60,37 @@ export function tagStatusColoring(isEnabled = true) {
 
     monitor.enhanceCard = function (card) {
       const componentId = monitor.getComponentId(card);
+      const isFailedNow = monitor.hasFailedStatus(card);
+      const hasStatusFailedClass = card.classList.contains('stape-status-failed');
 
+      // If failed now → ensure class is present and cache reflects "failed"
+      if (isFailedNow) {
+        if (!hasStatusFailedClass) {
+          card.classList.add('stape-status-failed');
+        }
+        if (!monitor.coloredComponents.has(componentId)) {
+          const tagTypeEl = card.querySelector('.gtm-debug-card__subtitle');
+          const info = {
+            component: card,
+            componentId: componentId,
+            tagType: tagTypeEl?.textContent || 'Unknown',
+            status: 'failed',
+            timestamp: new Date().toISOString(),
+            enhanced: true
+          };
+          monitor.coloredComponents.set(componentId, info);
+          return info;
+        }
+        return null;
+      }
+
+      if (hasStatusFailedClass) {
+        card.classList.remove('stape-status-failed');
+      }
       if (monitor.coloredComponents.has(componentId)) {
-        return null;
+        monitor.coloredComponents.delete(componentId);
       }
-
-      if (!monitor.hasFailedStatus(card)) {
-        return null;
-      }
-
-      if (card.classList.contains('stape-status-failed')) {
-        return null;
-      }
-
-      card.classList.add('stape-status-failed');
-
-      const tagTypeEl = card.querySelector('.gtm-debug-card__subtitle');
-      const info = {
-        component: card,
-        componentId: componentId,
-        tagType: tagTypeEl?.textContent || 'Unknown',
-        status: 'failed',
-        timestamp: new Date().toISOString(),
-        enhanced: true
-      };
-
-      monitor.coloredComponents.set(componentId, info);
-      return info;
+      return null;
     };
 
     monitor.processNewComponents = function () {
@@ -99,12 +103,10 @@ export function tagStatusColoring(isEnabled = true) {
 
         currentComponents.forEach((card) => {
           const componentId = monitor.getComponentId(card);
-          if (!monitor.detectedComponents.has(componentId)) {
-            monitor.detectedComponents.add(componentId);
-            const enhancedInfo = monitor.enhanceCard(card);
-            if (enhancedInfo) {
-              newComponents.push(enhancedInfo);
-            }
+          monitor.detectedComponents.add(componentId);
+          const enhancedInfo = monitor.enhanceCard(card);
+          if (enhancedInfo) {
+            newComponents.push(enhancedInfo);
           }
         });
 

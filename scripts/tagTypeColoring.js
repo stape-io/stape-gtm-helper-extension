@@ -32,9 +32,9 @@ export function tagTypeColoring(isEnabled = true) {
       [
         /Microsoft Ads/i,
         {
-          vendor: 'bing',
-          color: '#3CA55C',
-          icon: 'https://www.bing.com/favicon.ico?toWww=1&redig=A5077B0B51D042998466895B120457AE'
+          vendor: 'microsoft-ads',
+          color: '#8AC5DF',
+          icon: 'https://cdn.stape.io/i/68dbdfa14a506864681050.ico'
         }
       ],
       [
